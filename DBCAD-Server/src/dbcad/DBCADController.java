@@ -7,6 +7,7 @@ import java.util.Map;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -50,20 +51,16 @@ public class DBCADController {
         return returnText;
     }
     
-    @RequestMapping(value="/db_type",method=RequestMethod.DELETE)
-    public @ResponseBody String deleteDBType(@RequestParam("db_type_id") String dbTypeId){
+    @RequestMapping(value="/db_type/{db_type_id}",method=RequestMethod.DELETE)
+    public @ResponseBody String deleteDBType(@PathVariable("db_type_id") String dbTypeId){
     	String returnText;
-        //if(!result.hasErrors()){
-        	System.out.println("TYPE::: "+dbTypeId);
-        	if (repHandler.deleteDatabaseType(dbTypeId)){
-        		returnText = "DB Type Deleted.";
-        	}
-        	else{
-        		returnText = "Error: DB Type was not deleted";
-        	}
-       // }else{
-       //     returnText = "Error: DB Type was not deleted";
-       // }
+    	System.out.println("TYPE::: "+dbTypeId);
+    	if (repHandler.deleteDatabaseType(dbTypeId)){
+    		returnText = "DB Type Deleted.";
+    	}
+    	else{
+    		returnText = "Error: DB Type was not deleted";
+    	}
         return returnText;
     }
     

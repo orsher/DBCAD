@@ -33,8 +33,9 @@
 	        function doDeleteDBType(dbTypeId,object) {
 		        $.ajax({
 			        type: "POST",
-			        url: "rest/db_type",
-			        data: "db_type_id=" + dbTypeId + "&_method=DELETE",
+			        url: "rest/db_type/"+dbTypeId,
+			        //data: "db_type_id=" + dbTypeId + "&_method=DELETE",
+			        data: "_method=DELETE",
 			        success: function(response){
 				        // we have the response
 				        $('#info').html(response);

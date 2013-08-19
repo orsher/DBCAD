@@ -13,17 +13,37 @@
 		
 		        $.ajax({
 			        type: "POST",
-			        url: "submit_db_type.html",
-			        data: "dbVendor=" + dbVendor + "&dbRole=" + dbRole,
+			        url: "rest/db_type",
+			        data: "dbVendor=" + dbVendor + "&dbRole=" + dbRole + "&_method=PUT",
 			        success: function(response){
 				        // we have the response
 				        $('#info').html(response);
-				        $('#types-table-body').append('<tr><td>'+dbVendor+'</td><td>'+dbRole+'</td></tr>');
+				        $('#types-table-body').append('<tr class="table_row"><td>'
+								+dbVendor+'</td><td>'+dbRole+'</td>'+
+								'<td><input type="button" value="Delete" onclick="doDeleteDBType(\''+response+'\',this)"></td></tr>');
 				        
 			        },
 			        error: function(e){
 			        	$('#info').html("error");
-			        	alert('Error: ' + e);
+			        	alert('Error: ' + e.responseText);
+			        }
+		        });
+	        }
+	        
+	        function doDeleteDBType(dbTypeId,object) {
+		        $.ajax({
+			        type: "POST",
+			        url: "rest/db_type",
+			        data: "db_type_id=" + dbTypeId + "&_method=DELETE",
+			        success: function(response){
+				        // we have the response
+				        $('#info').html(response);
+				        var p=object.parentNode.parentNode;
+				        p.parentNode.removeChild(p);
+			        },
+			        error: function(e){
+			        	$('#info').html("error"+dbTypeId);
+			        	alert('Error: ' + e.responseText);
 			        }
 		        });
 	        }
@@ -62,6 +82,7 @@
                         <tr class="table_row">    
                             <td>${tableRow.db_vendor}</td>
                             <td>${tableRow.db_role}</td>
+                            <td><input type="button" value="Delete" onclick="doDeleteDBType('${tableRow.db_type_id}',this)"></td>
                         </tr>
                     </c:forEach>
                 </tbody>

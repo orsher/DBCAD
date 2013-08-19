@@ -20,13 +20,27 @@
 	    <servlet-class>org.apache.catalina.servlets.DefaultServlet</servlet-class>
 	    <load-on-startup>1</load-on-startup>
   	</servlet>
+  	<servlet-mapping>
+        <servlet-name>spring</servlet-name>
+        <url-pattern>/rest/*</url-pattern>
+    </servlet-mapping>
     <servlet-mapping>
         <servlet-name>spring</servlet-name>
-        <url-pattern>*.html</url-pattern>
+        <url-pattern>/manage</url-pattern>
     </servlet-mapping>
 
 	  <servlet-mapping>
 	    <servlet-name>statCont</servlet-name>
 	    <url-pattern>*.js</url-pattern>
 	  </servlet-mapping>
+ 
+	<filter>
+	    <filter-name>hiddenHttpMethodFilter</filter-name>
+	    <filter-class>org.springframework.web.filter.HiddenHttpMethodFilter</filter-class>
+	</filter>
+	 
+	<filter-mapping>
+	    <filter-name>hiddenHttpMethodFilter</filter-name>
+	    <servlet-name>spring</servlet-name>
+	</filter-mapping>
 </web-app>

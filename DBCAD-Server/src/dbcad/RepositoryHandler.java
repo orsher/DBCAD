@@ -107,13 +107,14 @@ public class RepositoryHandler {
 		ResultSet rs = null;
 		ArrayList<HashMap<String,String>> databaseTypes = new ArrayList<HashMap<String,String>>();
 		try{
-			PreparedStatement preparedStatement = conn.prepareStatement("select db_role,db_vendor from database_type");
+			PreparedStatement preparedStatement = conn.prepareStatement("select db_type_id,db_role,db_vendor from database_type");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
-				HashMap<String,String> dbRole = new HashMap<String,String>();
-				dbRole.put("db_vendor", rs.getString("db_vendor"));
-				dbRole.put("db_role", rs.getString("db_role"));
-				databaseTypes.add(dbRole);
+				HashMap<String,String> dbType = new HashMap<String,String>();
+				dbType.put("db_type_id", rs.getString("db_type_id"));
+				dbType.put("db_vendor", rs.getString("db_vendor"));
+				dbType.put("db_role", rs.getString("db_role"));
+				databaseTypes.add(dbType);
 			}
 		}catch(Exception e){
 			e.printStackTrace();
@@ -121,12 +122,23 @@ public class RepositoryHandler {
 		return databaseTypes;
 	}
 	
-	protected boolean addDatabaseType(String dbVendor, String dbRole){
+	protected String addDatabaseType(String dbVendor, String dbRole){
 		try{
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into database_type (db_type_id,db_role,db_vendor) values (?,?,?)");
 			preparedStatement.setString(1, dbVendor+" "+dbRole);
 			preparedStatement.setString(2, dbRole);
 			preparedStatement.setString(3, dbVendor);
+			return (preparedStatement.executeUpdate() > 0) ? dbVendor+" "+dbRole : "";
+		}catch(Exception e){
+			e.printStackTrace();
+			return dbVendor+" "+dbRole;
+		}
+	}
+	
+	protected boolean deleteDatabaseType(String dbTypeId){
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("delete from database_type where db_type_id = ?");
+			preparedStatement.setString(1, dbTypeId);
 			return (preparedStatement.executeUpdate() > 0);
 		}catch(Exception e){
 			e.printStackTrace();

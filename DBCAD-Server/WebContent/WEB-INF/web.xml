@@ -21,18 +21,23 @@
 	    <load-on-startup>1</load-on-startup>
   	</servlet>
   	<servlet-mapping>
+		<servlet-name>jsp</servlet-name>
+  		<url-pattern>/WEB-INF/jsp/*</url-pattern>
+ 	</servlet-mapping>
+	<servlet-mapping>
+	    <servlet-name>statCont</servlet-name>
+	    <url-pattern>/scripts/*</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+	    <servlet-name>statCont</servlet-name>
+	    <url-pattern>*.jsp</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
         <servlet-name>spring</servlet-name>
-        <url-pattern>/rest/*</url-pattern>
-    </servlet-mapping>
-    <servlet-mapping>
-        <servlet-name>spring</servlet-name>
-        <url-pattern>/manage</url-pattern>
+        <url-pattern>/*</url-pattern>
     </servlet-mapping>
 
-	  <servlet-mapping>
-	    <servlet-name>statCont</servlet-name>
-	    <url-pattern>*.js</url-pattern>
-	  </servlet-mapping>
+
  
 	<filter>
 	    <filter-name>hiddenHttpMethodFilter</filter-name>

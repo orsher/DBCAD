@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -30,10 +32,21 @@ public class DBCADController {
     	options.put("db_roles", repHandler.getDatabaseRoles());
     	options.put("db_vendors", repHandler.getDatabaseVendors());
     	tableValues = repHandler.getDatabaseTypes();
-        return new ModelAndView("AddDBTypes" , "options", options).addObject("table_values",tableValues);
+        return new ModelAndView("ManageDatabases" , "options", options).addObject("table_values",tableValues);
     }
     
-    @RequestMapping(value="/db_type",method=RequestMethod.PUT)
+    @RequestMapping(value = "/rest/query/{lob_id}", method = RequestMethod.GET)
+    public @ResponseBody String queryLobForDBChanges(@PathVariable("lob_id") String lobId,@RequestParam("query_data") JSONArray queryData) {
+		JSONObject jsonResponse = new JSONObject();
+		String dbChangeId;
+		for (int i=0; i < queryData.length(); i++){
+			dbChangeId = queryData.getString(i);
+			jsonResponse.put(dbChangeId, repHandler.checkDbChanges(dbChangeId, lobId));
+		}
+		return jsonResponse.toString();
+    }
+    
+    @RequestMapping(value="/rest/db_type",method=RequestMethod.PUT)
     public @ResponseBody String addDBType(@ModelAttribute(value="db_type") DBType dbType, BindingResult result){
     	String returnText;
         if(!result.hasErrors()){
@@ -51,7 +64,7 @@ public class DBCADController {
         return returnText;
     }
     
-    @RequestMapping(value="/db_type/{db_type_id}",method=RequestMethod.DELETE)
+    @RequestMapping(value="/rest/db_type/{db_type_id}",method=RequestMethod.DELETE)
     public @ResponseBody String deleteDBType(@PathVariable("db_type_id") String dbTypeId){
     	String returnText;
     	System.out.println("TYPE::: "+dbTypeId);
@@ -63,22 +76,5 @@ public class DBCADController {
     	}
         return returnText;
     }
-    
-    /*@RequestMapping(value="/submit_db_type.html",method=RequestMethod.POST)
-    public @ResponseBody String addDBType(@ModelAttribute(value="db_type") DBType dbType, BindingResult result ){
-        String returnText;
-        if(!result.hasErrors()){
-        	System.out.println("TYPE::: "+dbType.getDbRole() +" "+ dbType.getDbVendor());
-        	if (repHandler.addDatabaseType(dbType.getDbVendor(), dbType.getDbRole())){
-        		returnText = "DB Type added.";
-        	}
-        	else{
-        		returnText = "Error: DB Type was not added";
-        	}
-        }else{
-            returnText = "Error: DB Type was not added";
-        }
-        return returnText;
-    }*/
      
 }

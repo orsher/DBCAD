@@ -27,12 +27,30 @@ public class DBCADController {
 	}
 
     @RequestMapping(value = "/manage", method = RequestMethod.GET)
-    public ModelAndView addDBType() {
+    public ModelAndView manageDatabasesView() {
     	options = new HashMap<String,ArrayList<String>>();
     	options.put("db_roles", repHandler.getDatabaseRoles());
     	options.put("db_vendors", repHandler.getDatabaseVendors());
     	tableValues = repHandler.getDatabaseTypes();
         return new ModelAndView("ManageDatabases" , "options", options).addObject("table_values",tableValues);
+    }
+    
+    @RequestMapping(value = "/deploy", method = RequestMethod.GET)
+    public ModelAndView deployDBChangesView() {
+    	options = new HashMap<String,ArrayList<String>>();
+    	options.put("lobs", repHandler.getLobs());
+    	options.put("db_changes", repHandler.getNextDBRequests(10, null));
+        return new ModelAndView("DeployDBChanges" , "options", options);
+    }
+    
+    @RequestMapping(value = "/rest/deploy/{lob_id}", method = RequestMethod.PUT)
+    public @ResponseBody String deployDBChangesOnLOB(@PathVariable("lob_id") String lobId,@RequestParam("db_changes") JSONArray dbChanges) {
+		String dbChangeId;
+		for (int i=0; i < dbChanges.length(); i++){
+			dbChangeId = dbChanges.getString(i);
+			repHandler.markDbChangeAsDeployed(dbChangeId, lobId);
+		}
+		return "JOB Was sent";
     }
     
     @RequestMapping(value = "/rest/query/{lob_id}", method = RequestMethod.GET)

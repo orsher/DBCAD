@@ -88,6 +88,39 @@ public class RepositoryHandler {
 		return databaseVendors;
 	}
 	
+	protected ArrayList<String> getLobs(){
+		ResultSet rs = null;
+		ArrayList<String> lobs = new ArrayList<String>();
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("select distinct lob_id from lob_group_mapping");
+			rs = preparedStatement.executeQuery();
+			while (rs.next()){
+				lobs.add(rs.getString("lob_id"));
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return lobs;
+	}
+	
+	protected ArrayList<String> getNextDBRequests(Integer bulkSize, String LastDBReqId){
+		ResultSet rs = null;
+		String lastDBReqIdQuery = (LastDBReqId == null) ? "" : LastDBReqId;
+		ArrayList<String> dbRequestIds = new ArrayList<String>();
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_request_id from db_requests where db_request_id > ? limit ?");
+			preparedStatement.setString(1, lastDBReqIdQuery);
+			preparedStatement.setInt(2, bulkSize);
+			rs = preparedStatement.executeQuery();
+			while (rs.next()){
+				dbRequestIds.add(rs.getString("db_request_id"));
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return dbRequestIds;
+	}
+	
 	protected ArrayList<String> getDatabaseRoles(){
 		ResultSet rs = null;
 		ArrayList<String> databaseRoles = new ArrayList<String>();
@@ -144,5 +177,27 @@ public class RepositoryHandler {
 			e.printStackTrace();
 			return false;
 		}
+	}
+
+	public void markDbChangeAsDeployed(String dbChangeId, String lobId) {
+		// ResultSet rs = null;
+		String status = null;
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_request_status (db_request_id,db_group_id,status,update_date) values (?,?,?,?)");
+			preparedStatement.setString(1, dbChangesId);
+			preparedStatement.setString(2, lob_id);
+			rs = preparedStatement.executeQuery();
+			if (rs.next()){
+				status = rs.getString("status");
+				System.out.println(status);
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		if (status != null && status.equals("Done")){
+			return true;
+		}
+		return false;
+		
 	}
 }

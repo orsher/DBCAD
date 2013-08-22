@@ -25,7 +25,7 @@ public class DBCADController {
 		repHandler = new RepositoryHandler();
 	}
 
-    @RequestMapping(value = "/manage", method = RequestMethod.GET)
+    @RequestMapping(value = "/manage-databases", method = RequestMethod.GET)
     public ModelAndView manageDatabases() {
     	HashMap<String,ArrayList<String>> options;
     	ArrayList<HashMap<String,String>> typeTableValues;
@@ -131,6 +131,40 @@ public class DBCADController {
     	}
     	else{
     		returnText = "Error: DB Instance was not deleted";
+    	}
+        return returnText;
+    }
+    
+    @RequestMapping(value = "/manage-db-changes", method = RequestMethod.GET)
+    public ModelAndView ManageDBChangesView() {
+    	HashMap<String,ArrayList<String>> options = new HashMap<String,ArrayList<String>>();
+    	options.put("db_schemas", repHandler.getDatabaseSchemas());
+    	options.put("db_changes", repHandler.getNextDBRequests(10, null));
+        return new ModelAndView("ManageDBChanges" , "options", options);
+    }
+    
+    @RequestMapping(value="/rest/db_change/{schema_id}/{db_change_id}",method=RequestMethod.PUT)
+    public @ResponseBody String addDBChange(@RequestParam(value="db_change_text") String dbChangeText, @PathVariable("schema_id") String schemaId,@PathVariable("db_change_id") String dbChangeId){
+    	String returnText;
+    	int statusCode = repHandler.addDatabaseChange(dbChangeId,schemaId,dbChangeText);
+    	if (statusCode == 0){
+    		returnText = "Database Change added";
+    	}
+    	else{
+    		returnText = "Error: Database Change was not added";
+    	}
+        return returnText;
+    }
+    
+    @RequestMapping(value="/rest/db_change/{db_change_id}",method=RequestMethod.DELETE)
+    public @ResponseBody String deleteDBChange(@PathVariable("db_change_id") String dbChangeId){
+    	String returnText;
+    	int statusCode = repHandler.deleteDatabaseChange(dbChangeId);
+    	if (statusCode == 0){
+    		returnText = "DB Change Deleted";
+    	}
+    	else{
+    		returnText = "Error: DB Change was not deleted";
     	}
         return returnText;
     }

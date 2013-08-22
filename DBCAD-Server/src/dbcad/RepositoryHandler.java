@@ -256,4 +256,45 @@ public class RepositoryHandler {
 			return false;
 		}
 	}
+
+	public ArrayList<String> getDatabaseSchemas() {
+		ResultSet rs = null;
+		ArrayList<String> databaseSchemas = new ArrayList<String>();
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("select schema_id from db_schema");
+			rs = preparedStatement.executeQuery();
+			while (rs.next()){
+				databaseSchemas.add(rs.getString("schema_id"));
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return databaseSchemas;
+	}
+
+	public int addDatabaseChange(String dbChangeId, String schemaId,String dbChangeText) {
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_requests (db_request_id,schema_id,code) values (?,?,?)");
+			preparedStatement.setString(1, dbChangeId);
+			preparedStatement.setString(2, schemaId);
+			preparedStatement.setString(3, dbChangeText);
+			preparedStatement.executeUpdate();
+			return 0;
+		}
+		catch(Exception e){
+			return 1;
+		}
+	}
+	
+	public int deleteDatabaseChange(String dbChangeId) {
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("delete from db_requests where db_request_id=?");
+			preparedStatement.setString(1, dbChangeId);
+			preparedStatement.executeUpdate();
+			return 0;
+		}
+		catch(Exception e){
+			return 1;
+		}
+	}
 }

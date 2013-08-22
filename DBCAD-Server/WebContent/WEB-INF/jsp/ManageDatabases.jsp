@@ -146,7 +146,7 @@
 <input type="button" value="Add" onclick="addDbInstance()">
      
 
-<table id="types-table" class="table">
+			<table id="types-table" class="table">
                 <thead>
                     <tr>
                         <th>Database Group Id</th>
@@ -167,5 +167,7 @@
                     </c:forEach>
                 </tbody>
             </table>
+            
+            
 </body>
 </html>

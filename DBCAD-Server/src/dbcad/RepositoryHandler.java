@@ -52,25 +52,25 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
-		if (status != null && status.equals("Done")){
+		if (status != null && status.equals("DONE")){
 			return true;
 		}
 		return false;
 	}
 	
-	protected ArrayList<String> getDatabaseInstances(){
+	protected ArrayList<String> getDatabaseIds(){
 		ResultSet rs = null;
-		ArrayList<String> databaseInstances = new ArrayList<String>();
+		ArrayList<String> databaseIds = new ArrayList<String>();
 		try{
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_id from database_instance");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
-				databaseInstances.add(rs.getString("db_id"));
+				databaseIds.add(rs.getString("db_id"));
 			}
 		}catch(Exception e){
 			e.printStackTrace();
 		}
-		return databaseInstances;
+		return databaseIds;
 	}
 	
 	protected ArrayList<String> getDatabaseVendors(){
@@ -178,26 +178,82 @@ public class RepositoryHandler {
 			return false;
 		}
 	}
-
-	public void markDbChangeAsDeployed(String dbChangeId, String lobId) {
-		// ResultSet rs = null;
-		String status = null;
+	
+	protected ArrayList<String> getDatabaseGroups(){
+		ResultSet rs = null;
+		ArrayList<String> databaseGroups = new ArrayList<String>();
 		try{
-			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_request_status (db_request_id,db_group_id,status,update_date) values (?,?,?,?)");
-			preparedStatement.setString(1, dbChangesId);
-			preparedStatement.setString(2, lob_id);
+			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_group_id from database_groups");
 			rs = preparedStatement.executeQuery();
-			if (rs.next()){
-				status = rs.getString("status");
-				System.out.println(status);
+			while (rs.next()){
+				databaseGroups.add(rs.getString("db_group_id"));
 			}
 		}catch(Exception e){
 			e.printStackTrace();
 		}
-		if (status != null && status.equals("Done")){
-			return true;
+		return databaseGroups;
+	}
+	
+	protected ArrayList<HashMap<String,String>> getDatabaseInstances(){
+		ResultSet rs = null;
+		ArrayList<HashMap<String,String>> databaseInstances = new ArrayList<HashMap<String,String>>();
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("select db_id, db_group_id,host,port,sid from database_instance");
+			rs = preparedStatement.executeQuery();
+			while (rs.next()){
+				HashMap<String,String> dbInstance = new HashMap<String,String>();
+				dbInstance.put("db_id", rs.getString("db_id"));
+				dbInstance.put("db_group_id", rs.getString("db_group_id"));
+				dbInstance.put("host", rs.getString("host"));
+				dbInstance.put("port", Integer.toString(rs.getInt("port")));
+				dbInstance.put("sid", rs.getString("sid"));
+				databaseInstances.add(dbInstance);
+			}
+		}catch(Exception e){
+			e.printStackTrace();
 		}
-		return false;
-		
+		return databaseInstances;
+	}
+
+	protected String addDatabaseInstance(String db_group_id, String host,Integer port, String sid ){
+	try{
+		PreparedStatement preparedStatement = conn.prepareStatement("insert into database_instance (db_id,db_group_id,host,port,sid) values (?,?,?,?,?)");
+		preparedStatement.setString(1, host+":"+port+":"+sid);
+		preparedStatement.setString(2, db_group_id);
+		preparedStatement.setString(3, host);
+		preparedStatement.setInt(4, port);
+		preparedStatement.setString(5, sid);
+		return (preparedStatement.executeUpdate() > 0)  ? host+":"+port+":"+sid: "";
+	}catch(Exception e){
+		e.printStackTrace();
+		return host+":"+port+":"+sid;
+	}
+  }
+	protected boolean deleteDatabaseInstance(String dbInstanceId){
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("delete from database_instance where db_id = ?");
+			preparedStatement.setString(1, dbInstanceId);
+			return (preparedStatement.executeUpdate() > 0);
+		}catch(Exception e){
+			e.printStackTrace();
+			return false;
+		}
+	}
+
+	public boolean markDbChangeAsDeployed(String dbChangeId, String lobId) {
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_request_status (db_request_id,db_group_id,status,update_date) "+
+																		"select dbr.db_request_id,dbg.db_group_id,'DONE',now() from db_requests dbr, db_schema dbs, database_groups dbg, lob_group_mapping lobgm "+ 
+																		"where dbr.schema_id = dbs.schema_id "+
+																		"and dbs.db_type_id = dbg.db_type_id "+
+																		"and dbg.db_group_id = lobgm.db_group_id "+ 
+																		"and dbr.db_request_id=? and lobgm.lob_id=?");
+			preparedStatement.setString(1, dbChangeId);
+			preparedStatement.setString(2, lobId);
+			return (preparedStatement.executeUpdate() > 0) ? true : false;
+		}catch(Exception e){
+			e.printStackTrace();
+			return false;
+		}
 	}
 }

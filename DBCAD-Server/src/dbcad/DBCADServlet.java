@@ -51,7 +51,7 @@ public class DBCADServlet extends HttpServlet {
 	private void manage(HttpServletRequest request, HttpServletResponse response) {
 		try{
 			JSONObject jsonMetadata = new JSONObject();
-			ArrayList<String> databaseInstances = repHandler.getDatabaseInstances();
+			ArrayList<String> databaseInstances = repHandler.getDatabaseIds();
 			JSONArray jsonDatbaseInstanceList = new JSONArray();
 			for (String databaseInstance : databaseInstances){
 				jsonDatbaseInstanceList.put(databaseInstance);

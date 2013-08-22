@@ -6,7 +6,7 @@
     <title>Add Database Types</title>
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
-	        function doAjaxPost() {
+	        function addDbType() {
 		        // get the form values
 		        var dbVendor = $('#db_vendor').val();
 		        var dbRole = $('#db_role').val();
@@ -21,6 +21,30 @@
 				        $('#types-table-body').append('<tr class="table_row"><td>'
 								+dbVendor+'</td><td>'+dbRole+'</td>'+
 								'<td><input type="button" value="Delete" onclick="doDeleteDBType(\''+response+'\',this)"></td></tr>');
+				        
+			        },
+			        error: function(e){
+			        	$('#info').html("error");
+			        	alert('Error: ' + e.responseText);
+			        }
+		        });       
+	        }
+	        function addDbInstance() {
+		        // get the form values
+		        var dbGroupId = $('#group_select').val();
+		        var dbHost = $('#host').val();
+		        var dbPort = $('#port').val();
+		        var dbSid = $('#sid').val();
+		        $.ajax({
+			        type: "POST",
+			        url: "rest/db_instance",
+			        data: "dbGroupId=" + dbGroupId + "&dbHost=" + dbHost + "&dbPort=" + dbPort + "&dbSid=" + dbSid + "&_method=PUT",
+			        success: function(response){
+				        // we have the response
+				        $('#info').html(response);
+				        $('#types-table-body').append('<tr class="table_row"><td>'
+								+dbGroupId+'</td><td>'+dbHost+'</td>'+dbPort+'</td>'+dbSid+'</td>'+
+								'<td><input type="button" value="Delete" onclick="doDeleteDBInstance(\''+response+'\',this)"></td></tr>');
 				        
 			        },
 			        error: function(e){
@@ -48,6 +72,25 @@
 			        }
 		        });
 	        }
+	        
+	        function doDeleteDBInstance(dbId,object) {
+		        $.ajax({
+			        type: "POST",
+			        url: "rest/db_instance/"+dbId,
+			        //data: "db_type_id=" + dbTypeId + "&_method=DELETE",
+			        data: "_method=DELETE",
+			        success: function(response){
+				        // we have the response
+				        $('#info').html(response);
+				        var p=object.parentNode.parentNode;
+				        p.parentNode.removeChild(p);
+			        },
+			        error: function(e){
+			        	$('#info').html("error"+dbId);
+			        	alert('Error: ' + e.responseText);
+			        }
+		        });
+	        }
         </script>
 </head>
 <body>
@@ -68,7 +111,7 @@
 		<div id="info" style="color: green;">info...</div>
 <br/>
  
-<input type="button" value="Add" onclick="doAjaxPost()">
+<input type="button" value="Add" onclick="addDbType()">
      
 
 <table id="types-table" class="table">
@@ -79,11 +122,47 @@
                     </tr>
                 </thead>
                 <tbody id="types-table-body">
-                    <c:forEach items="${table_values}" var="tableRow">
+                    <c:forEach items="${type_table_values}" var="tableRow">
                         <tr class="table_row">    
                             <td>${tableRow.db_vendor}</td>
                             <td>${tableRow.db_role}</td>
                             <td><input type="button" value="Delete" onclick="doDeleteDBType('${tableRow.db_type_id}',this)"></td>
+                        </tr>
+                    </c:forEach>
+                </tbody>
+            </table>
+
+            
+<h2>Add Database Instance</h2>
+		<form:select path="options" id="group_select">
+		    <form:options items="${options.db_groups}" />
+		</form:select>
+		<input type="text" id="host" name="host" />
+		<input type="text" id="port" name="port" />
+		<input type="text" id="sid" name="sid" />
+		<div id="info" style="color: green;">info...</div>
+<br/>
+ 
+<input type="button" value="Add" onclick="addDbInstance()">
+     
+
+<table id="types-table" class="table">
+                <thead>
+                    <tr>
+                        <th>Database Group Id</th>
+                        <th>Database Host</th>
+                        <th>Database Port</th>
+                        <th>Database Sid</th>
+                    </tr>
+                </thead>
+                <tbody id="types-table-body">
+                    <c:forEach items="${instance_table_values}" var="tableRow">
+                        <tr class="table_row">    
+                            <td>${tableRow.db_group_id}</td>
+                            <td>${tableRow.host}</td>
+                            <td>${tableRow.port}</td>
+                            <td>${tableRow.sid}</td>
+                            <td><input type="button" value="Delete" onclick="doDeleteDBInstance('${tableRow.db_id}',this)"></td>
                         </tr>
                     </c:forEach>
                 </tbody>

@@ -19,24 +19,33 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class DBCADController {
 	private static RepositoryHandler repHandler;
-	private HashMap<String,ArrayList<String>> options;
-	private ArrayList<HashMap<String,String>> tableValues;
+	
 	
 	static{
 		repHandler = new RepositoryHandler();
 	}
 
     @RequestMapping(value = "/manage", method = RequestMethod.GET)
-    public ModelAndView manageDatabasesView() {
+    public ModelAndView manageDatabases() {
+    	HashMap<String,ArrayList<String>> options;
+    	ArrayList<HashMap<String,String>> typeTableValues;
+    	ArrayList<HashMap<String,String>> instanceTableValues;
+    	ModelAndView mav = new ModelAndView ("ManageDatabases") ;
     	options = new HashMap<String,ArrayList<String>>();
     	options.put("db_roles", repHandler.getDatabaseRoles());
     	options.put("db_vendors", repHandler.getDatabaseVendors());
-    	tableValues = repHandler.getDatabaseTypes();
-        return new ModelAndView("ManageDatabases" , "options", options).addObject("table_values",tableValues);
+    	options.put("db_groups", repHandler.getDatabaseGroups());
+    	typeTableValues = repHandler.getDatabaseTypes();
+    	instanceTableValues = repHandler.getDatabaseInstances();
+    	mav.addObject ("options", options);
+    	mav.addObject ("type_table_values",typeTableValues);
+    	mav.addObject ("instance_table_values",instanceTableValues);
+    	return mav;
     }
     
     @RequestMapping(value = "/deploy", method = RequestMethod.GET)
     public ModelAndView deployDBChangesView() {
+    	HashMap<String,ArrayList<String>> options;
     	options = new HashMap<String,ArrayList<String>>();
     	options.put("lobs", repHandler.getLobs());
     	options.put("db_changes", repHandler.getNextDBRequests(10, null));
@@ -91,6 +100,37 @@ public class DBCADController {
     	}
     	else{
     		returnText = "Error: DB Type was not deleted";
+    	}
+        return returnText;
+    }
+    
+    @RequestMapping(value="/rest/db_instance",method=RequestMethod.PUT)
+    public @ResponseBody String addDBInstance(@ModelAttribute(value="db_instance") DBInstance dbInstance, BindingResult result){
+    	String returnText;
+        if(!result.hasErrors()){
+        	System.out.println("INSTANCE::: "+ dbInstance.getDbGroupId() +" "+ dbInstance.getDbHost() +" "+ dbInstance.getDbSid()+" "+ dbInstance.getDbPort());
+        	String dbInstanceId = repHandler.addDatabaseInstance(dbInstance.getDbGroupId(), dbInstance.getDbHost() , dbInstance.getDbPort(), dbInstance.getDbSid());
+        	if (!dbInstanceId.equals("")){
+        		returnText = dbInstanceId;
+        	}
+        	else{
+        		returnText = "Error: DB Instance was not added";
+        	}
+        }else{
+            returnText = "Error: DB Instance was not added";
+        }
+        return returnText;
+    }
+    
+    @RequestMapping(value="/rest/db_instance/{db_instance_id}",method=RequestMethod.DELETE)
+    public @ResponseBody String deleteDBInstance(@PathVariable("db_instance_id") String dbInstanceId){
+    	String returnText;
+    	System.out.println("INSTANCE::: "+dbInstanceId);
+    	if (repHandler.deleteDatabaseInstance(dbInstanceId)){
+    		returnText = "DB instance Deleted.";
+    	}
+    	else{
+    		returnText = "Error: DB Instance was not deleted";
     	}
         return returnText;
     }

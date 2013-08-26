@@ -4,6 +4,7 @@
 <html>
 <head>
     <title>Add Database Types</title>
+    <link href="css/dbcad.css" rel="stylesheet" type="text/css" />
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
 	        function addDbType() {
@@ -91,11 +92,14 @@
 			        }
 		        });
 	        }
+	        function load()
+	        {
+	        	$('#manage-databases-link').addClass("current");
+	        }
         </script>
 </head>
-<body>
- 
-<h2>Add Database Types</h2>
+<body onload="load()">
+ <%@ include file="BodyHeader.jsp" %>
 		<input type="text" id="db_vendor" name="db_vendor" list="db_vendors"/>
 		<datalist id="db_vendors">
 		    <c:forEach items="${options.db_vendors}" var="dbVendor">
@@ -167,7 +171,6 @@
                     </c:forEach>
                 </tbody>
             </table>
-            
-            
+	<%@ include file="BodyFooter.jsp" %>        
 </body>
 </html>

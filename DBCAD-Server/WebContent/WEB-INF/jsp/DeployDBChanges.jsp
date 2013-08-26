@@ -4,6 +4,7 @@
 <html>
 <head>
     <title>Add Database Types</title>
+    <link href="css/dbcad.css" rel="stylesheet" type="text/css" />
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
 	        function doAjaxPost() {
@@ -29,12 +30,14 @@
 			        }
 		        });
 	        }
-	        
+	        function load()
+	        {
+	        	$('#deploy-link').addClass("current");
+	        }
         </script>
 </head>
-<body>
- 
-<h2>Deploy Database Changes</h2>
+<body onload="load()">
+<%@ include file="BodyHeader.jsp" %>
 		<form:select path="options" id="lob_select">
 		    <form:options items="${options.lobs}" />
 		</form:select>
@@ -58,5 +61,6 @@
                     </c:forEach>
                 </tbody>
             </table>
+	<%@ include file="BodyFooter.jsp" %>
 </body>
 </html>

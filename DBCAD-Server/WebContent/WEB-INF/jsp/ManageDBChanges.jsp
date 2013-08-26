@@ -3,8 +3,8 @@
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <html>
 <head>
-    <title>Manage Database Changes</title>
-    <link href="css/dbcad.css" rel="stylesheet" type="text/css" />
+    	<title>Manage Database Changes</title>
+    	<link href="css/dbcad.css" rel="stylesheet" type="text/css" />
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
 	        function addDBChange() {
@@ -40,30 +40,14 @@
 			        }
 		        });
 	        }
-	        
+	        function load()
+	        {
+	        	$('#manage-db-changes-link').addClass("current");
+	        }
         </script>
 </head>
-<body>
-	<div id="dbcad_wrapper">
-	
-    <div id="dbcad_header">
-	  	<div id="site_title"><h1><a href="/">DBCAD</a></h1></div>
-	 </div>
-      <div id="dbcad_menu">
-        <ul>
-            <li><a href="manage-databases" class="current">Manange Databases</a></li>
-            <li><a href="manage-db-changes">Manage DB Changes</a></li>
-            <li><a href="deploy">Deploy DB Changes</a></li>
-        </ul>    	
-        <div id="search_box">
-            <form action="#" method="post">
-              <input name="q" type="text" id="searchfield" title="searchfield" onfocus="clearText(this)" onblur="clearText(this)" value="Search" size="10" maxlength="60" />
-            </form>
-        </div>
-        <div class="cleaner"></div>
-    </div>
- 	<div id="dbcad_main">
- 		<div id="dbcad_content">
+<body onload="load()">
+		<%@ include file="BodyHeader.jsp" %>
 		<form:select path="options" id="schema_select">
 		    <form:options items="${options.db_schemas}" />
 		</form:select>
@@ -88,9 +72,6 @@
                     </c:forEach>
                 </tbody>
             </table>
-            <span class="bottom"></span>
-            </div>
-            </div>
-      </div>
+		  <%@ include file="BodyFooter.jsp" %>
 </body>
 </html>

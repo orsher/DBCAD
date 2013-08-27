@@ -189,8 +189,8 @@ a.more:hover { text-decoration: none; color: #faca39; }
 #cp_contact_form { padding: 0; width: 380px }
 #cp_contact_form form { margin: 0px; padding: 0px; }
 
-#cp_contact_form form .input_field { 
-	width: 380px; font-size: 12px; color: #333; padding: 5px; 
+.input_field { 
+	font-size: 12px; color: #333; padding: 5px; 
 	height: 20px; border: 1px solid #ccc;  background: #fff; font-family: Arial, Helvetica, sans-serif; font-size: 12px; }
 
 #cp_contact_form form label { display: block; width: 220px; margin-bottom: 5px; font-size: 12px; color: #000; }

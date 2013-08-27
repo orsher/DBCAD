@@ -100,13 +100,13 @@
 </head>
 <body onload="load()">
  <%@ include file="BodyHeader.jsp" %>
-		<input type="text" id="db_vendor" name="db_vendor" list="db_vendors"/>
+		<input type="text" id="db_vendor" class="input_field" name="db_vendor" list="db_vendors"/>
 		<datalist id="db_vendors">
 		    <c:forEach items="${options.db_vendors}" var="dbVendor">
 		             <option value="${dbVendor}">${dbVendor}</option>
 		    </c:forEach>
 		</datalist>
-		<input type="text" id="db_role" name="db_role" list="db_roles"/>
+		<input type="text" id="db_role" class="input_field" name="db_role" list="db_roles"/>
 		<datalist id="db_roles">
 		    <c:forEach items="${options.db_roles}" var="dbRole">
 		             <option value="${dbRole}">${dbRole}</option>
@@ -141,9 +141,9 @@
 		<form:select path="options" id="group_select">
 		    <form:options items="${options.db_groups}" />
 		</form:select>
-		<input type="text" id="host" name="host" />
-		<input type="text" id="port" name="port" />
-		<input type="text" id="sid" name="sid" />
+		<input type="text" id="host" name="host" class="input_field"/>
+		<input type="text" id="port" name="port" class="input_field"/>
+		<input type="text" id="sid" name="sid" class="input_field"/>
 		<div id="info" style="color: green;">info...</div>
 <br/>
  

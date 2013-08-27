@@ -51,9 +51,9 @@
 		<form:select path="options" id="schema_select">
 		    <form:options items="${options.db_schemas}" />
 		</form:select>
-		<input type="text" id="db_change_id_text_field" name="db_change_id_text_field"/>
+		<input type="text" class="input_field" id="db_change_id_text_field" name="db_change_id_text_field"/>
 		<br/>
-		<textarea id="db_change_text" style="width: 500px; height: 170px;"></textarea>
+		<textarea id="db_change_text" class="input_field" style="width: 500px; height: 170px;"></textarea>
 		<br/>
 		<input type="button" value="Create" onclick="addDBChange()">
 		<table id="db-changes-table" class="table">

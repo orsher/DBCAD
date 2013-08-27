@@ -4,6 +4,7 @@
 <html>
 <head>
     <title>Add Database Types</title>
+    <script src="scripts/tabcontent.js" type="text/javascript"></script>
     <link href="css/dbcad.css" rel="stylesheet" type="text/css" />
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
@@ -100,45 +101,53 @@
 </head>
 <body onload="load()">
  <%@ include file="BodyHeader.jsp" %>
-		<input type="text" id="db_vendor" class="input_field" name="db_vendor" list="db_vendors"/>
-		<datalist id="db_vendors">
-		    <c:forEach items="${options.db_vendors}" var="dbVendor">
-		             <option value="${dbVendor}">${dbVendor}</option>
-		    </c:forEach>
-		</datalist>
-		<input type="text" id="db_role" class="input_field" name="db_role" list="db_roles"/>
-		<datalist id="db_roles">
-		    <c:forEach items="${options.db_roles}" var="dbRole">
-		             <option value="${dbRole}">${dbRole}</option>
-		    </c:forEach>
-		</datalist>
-		<div id="info" style="color: green;">info...</div>
-<br/>
- 
-<input type="button" value="Add" onclick="addDbType()">
-     
-
-<table id="types-table" class="table">
-                <thead>
-                    <tr>
-                        <th>Database Vendor</th>
-                        <th>Database Role</th>
-                    </tr>
-                </thead>
-                <tbody id="types-table-body">
-                    <c:forEach items="${type_table_values}" var="tableRow">
-                        <tr class="table_row">    
-                            <td>${tableRow.db_vendor}</td>
-                            <td>${tableRow.db_role}</td>
-                            <td><input type="button" value="Delete" onclick="doDeleteDBType('${tableRow.db_type_id}',this)"></td>
-                        </tr>
-                    </c:forEach>
-                </tbody>
-            </table>
+		
 
             
-<h2>Add Database Instance</h2>
-		<form:select path="options" id="group_select">
+		<ul class="tabs" data-persist="true">
+        	<li class="selected"><a href="#database-types-div"><span>Database Types</span></a></li>
+        	<li class=""><a href="#database-instances-div"><span>Database Instances</span></a></li>
+    	</ul>
+    	<div class="tabcontents">
+            <div id="database-types-div" style="display: block;">
+                
+                <input type="text" id="db_vendor" class="input_field" name="db_vendor" list="db_vendors"/>
+					<datalist id="db_vendors">
+					    <c:forEach items="${options.db_vendors}" var="dbVendor">
+					             <option value="${dbVendor}">${dbVendor}</option>
+					    </c:forEach>
+					</datalist>
+					<input type="text" id="db_role" class="input_field" name="db_role" list="db_roles"/>
+					<datalist id="db_roles">
+					    <c:forEach items="${options.db_roles}" var="dbRole">
+					             <option value="${dbRole}">${dbRole}</option>
+					    </c:forEach>
+					</datalist>
+					<div id="info" style="color: green;">info...</div>
+						<br/>
+						<input type="button" value="Add" onclick="addDbType()">
+			
+						<table id="types-table" class="table">
+			                <thead>
+			                    <tr>
+			                        <th>Database Vendor</th>
+			                        <th>Database Role</th>
+			                    </tr>
+			                </thead>
+			                <tbody id="types-table-body">
+			                    <c:forEach items="${type_table_values}" var="tableRow">
+			                        <tr class="table_row">    
+			                            <td>${tableRow.db_vendor}</td>
+			                            <td>${tableRow.db_role}</td>
+			                            <td><input type="button" value="Delete" onclick="doDeleteDBType('${tableRow.db_type_id}',this)"></td>
+			                        </tr>
+			                    </c:forEach>
+			                </tbody>
+			            </table>
+                
+            </div>
+            <div id="database-instances-div" style="display: none;">
+            	<form:select path="options" id="group_select">
 		    <form:options items="${options.db_groups}" />
 		</form:select>
 		<input type="text" id="host" name="host" class="input_field"/>
@@ -149,7 +158,6 @@
  
 <input type="button" value="Add" onclick="addDbInstance()">
      
-
 			<table id="types-table" class="table">
                 <thead>
                     <tr>
@@ -171,6 +179,10 @@
                     </c:forEach>
                 </tbody>
             </table>
+            </div>
+    </div>
+
+		
 	<%@ include file="BodyFooter.jsp" %>        
 </body>
 </html>

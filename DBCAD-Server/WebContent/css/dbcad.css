@@ -318,7 +318,7 @@ td, th {padding: 10px 4px; border-bottom: 1px solid #EEE;}
 td + td {border-left: 1px solid #FAFAFA; color: #999;}
 td + td + td {color: #666; border-left: none;}
 td a {color: #444; text-decoration: none; text-align: right;}
-td a, th a {display: block; width: 100%;}
+/*td a, th a {display: block; width: 100%;}*/
 td a:hover {background: #444; color: #FFF;}
 tfoot th {text-align: right;}
 th {text-align: left;}

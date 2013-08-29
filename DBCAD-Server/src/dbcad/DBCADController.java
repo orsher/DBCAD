@@ -3,6 +3,7 @@ package dbcad;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -19,6 +20,7 @@ import org.springframework.web.servlet.ModelAndView;
 @Controller
 public class DBCADController {
 	private static RepositoryHandler repHandler;
+	private static final int TABLE_MAX_ROWS = 10; 
 
 	static {
 		repHandler = new RepositoryHandler();
@@ -51,11 +53,24 @@ public class DBCADController {
 	public ModelAndView deployDBChangesView() {
 		HashMap<String, ArrayList<String>> options;
 		ArrayList<HashMap<String, String>> dbChangesTableValues;
-		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus(10, null);
+		AtomicInteger totalNumberOfRows = new AtomicInteger();
+		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus(0, TABLE_MAX_ROWS,totalNumberOfRows);
 		options = new HashMap<String, ArrayList<String>>();
 		options.put("lobs", repHandler.getLobs());
 		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
-		return new ModelAndView("DeployDBChanges", "options", options).addObject("dbChangesTableValues",dbChangesTableValues);
+		return new ModelAndView("DeployDBChanges", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS));
+	}
+	
+	@RequestMapping(value = "/getDbChangesTablePage", method = RequestMethod.POST)
+	public ModelAndView getDBChangesTablePage(@RequestParam(value = "page") int page) {
+		HashMap<String, ArrayList<String>> options;
+		ArrayList<HashMap<String, String>> dbChangesTableValues;
+		AtomicInteger totalNumberOfRows = new AtomicInteger();
+		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus((page-1)*TABLE_MAX_ROWS, TABLE_MAX_ROWS,totalNumberOfRows);
+		options = new HashMap<String, ArrayList<String>>();
+		options.put("lobs", repHandler.getLobs());
+		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
+		return new ModelAndView("DeployDBChangesTable", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS));
 	}
 
 	@RequestMapping(value = "/rest/deploy/{lob_id}", method = RequestMethod.PUT)

@@ -4,8 +4,11 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerFieldUpdater;
 
 /*
  * Filling dbcad:
@@ -384,15 +387,20 @@ public class RepositoryHandler {
 		}
 	}
 	
-	public ArrayList<HashMap<String, String>> getDatabaseChangeLobsStatus(int bulkSize, String LastDBReqId) {
+	public ArrayList<HashMap<String, String>> getDatabaseChangeLobsStatus(int offset, int bulkSize, AtomicInteger totalRowNumber) {
 		ResultSet rs = null;
-		String lastDBReqIdQuery = (LastDBReqId == null) ? "" : LastDBReqId;
 		ArrayList<HashMap<String,String>> databaseChangeLobsStatus = new ArrayList<HashMap<String,String>>();
 		try{
-			PreparedStatement preparedStatement = conn.prepareStatement("select db_request_id, code from db_requests where db_request_id > ? limit ?");
-			preparedStatement.setString(1, lastDBReqIdQuery);
+			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_request_id, code from db_requests limit ?,?");
+			preparedStatement.setInt(1, offset);
 			preparedStatement.setInt(2, bulkSize);
 			rs = preparedStatement.executeQuery();
+			Statement stmt= conn.createStatement();
+			ResultSet numRowsRs = stmt.executeQuery("SELECT FOUND_ROWS()");
+            if(numRowsRs.next()){
+            	totalRowNumber.set(numRowsRs.getInt(1));
+            }
+            numRowsRs.close();
 			PreparedStatement statusPreparedStatement = conn.prepareStatement("select lobgm.lob_id, dbrs.status from db_request_status dbrs, lob_group_mapping lobgm where dbrs.db_group_id = lobgm.db_group_id and dbrs.db_request_id=?");
 			ResultSet statusRs = null;
 			while (rs.next()){
@@ -406,6 +414,7 @@ public class RepositoryHandler {
 				}
 				databaseChangeLobsStatus.add(dbChangeStatus);
 			}
+			rs.close();
 		}catch(Exception e){
 			e.printStackTrace();
 		}

@@ -50,13 +50,19 @@
                     <tr>
                         <th></th>
                         <th>Database Change ID</th>
+                        <c:forEach items="${options.lobs}" var="lob">
+                        	<th>${lob}</th>
+                        </c:forEach>
                     </tr>
                 </thead>
                 <tbody id="db-changes-table-body">
-                    <c:forEach items="${options.db_changes}" var="dbChange">
-                        <tr class="table_row">
-                        	<td><input type="checkbox" class="db_change_checkbox" value="${dbChange}" id="${dbChange}"></td>
-                            <td>${dbChange}</td>
+                    <c:forEach items="${dbChangesTableValues}" var="dbChange">
+                        <tr class="table_row" title="${dbChange.db_request_code}">
+                        	<td><input type="checkbox" class="db_change_checkbox" value="${dbChange.db_request_id}" id="${dbChange.db_request_id}"></td>
+                            <td>${dbChange.db_request_id}</td>
+                            <c:forEach items="${options.lobs}" var="lob">
+                        		<td>${dbChange[lob]}</td>
+                        	</c:forEach>
                         </tr>
                     </c:forEach>
                 </tbody>

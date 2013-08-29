@@ -103,7 +103,7 @@ public class RepositoryHandler {
 		return lobs;
 	}
 	
-	protected ArrayList<String> getNextDBRequests(Integer bulkSize, String LastDBReqId){
+	protected ArrayList<String> getNextDBChanges(Integer bulkSize, String LastDBReqId){
 		ResultSet rs = null;
 		String lastDBReqIdQuery = (LastDBReqId == null) ? "" : LastDBReqId;
 		ArrayList<String> dbRequestIds = new ArrayList<String>();
@@ -179,7 +179,7 @@ public class RepositoryHandler {
 		}
 	}
 	
-	protected ArrayList<String> getDatabaseGroups(){
+	protected ArrayList<String> getDatabaseGroupIds(){
 		ResultSet rs = null;
 		ArrayList<String> databaseGroups = new ArrayList<String>();
 		try{
@@ -297,4 +297,119 @@ public class RepositoryHandler {
 			return 1;
 		}
 	}
+
+	public ArrayList<String> getDatabaseTypeIds() {
+		ResultSet rs = null;
+		ArrayList<String> databaseTypesIds = new ArrayList<String>();
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("select db_type_id from database_type");
+			rs = preparedStatement.executeQuery();
+			while (rs.next()){
+				databaseTypesIds.add(rs.getString("db_type_id"));
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return databaseTypesIds;
+	}
+
+	public ArrayList<HashMap<String, String>> getDatabaseGroups() {
+		ResultSet rsGroups = null;
+		ResultSet rsLobs = null;
+		ArrayList<HashMap<String,String>> databaseGroups = new ArrayList<HashMap<String,String>>();
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("select db_group_id, db_type_id from database_groups");
+			rsGroups = preparedStatement.executeQuery();
+			while (rsGroups.next()){
+				HashMap<String,String> dbGroup = new HashMap<String,String>();
+				dbGroup.put("db_group_id", rsGroups.getString("db_group_id"));
+				dbGroup.put("db_type_id", rsGroups.getString("db_type_id"));
+				PreparedStatement lobsPreparedStatement = conn.prepareStatement("select lob_id from lob_group_mapping where db_group_id=?");
+				lobsPreparedStatement.setString(1, rsGroups.getString("db_group_id"));
+				rsLobs = lobsPreparedStatement.executeQuery();
+				StringBuilder sb = new StringBuilder();
+				if (rsLobs.next()){
+					sb.append(rsLobs.getString("lob_id"));
+				}
+				while (rsLobs.next()){
+					sb.append(", "+rsLobs.getString("lob_id"));
+				}
+				dbGroup.put("db_group_lob_mapping", sb.toString());
+				databaseGroups.add(dbGroup);
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return databaseGroups;
+	}
+	
+	public int addDatabaseGroup(String dbGroupId, String dbTypeId) {
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into database_groups (db_group_id,db_type_id) values (?,?)");
+			preparedStatement.setString(1, dbGroupId);
+			preparedStatement.setString(2, dbTypeId);
+			preparedStatement.executeUpdate();
+			return 0;
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			return 1;
+		}
+	}
+
+	public int deleteDatabaseGroup(String dbGroupId) {
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("delete from database_groups where db_group_id=?");
+			preparedStatement.setString(1, dbGroupId);
+			preparedStatement.executeUpdate();
+			return 0;
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			return 1;
+		}
+	}
+
+	public int addDatabaseGroupLobMapping(String dbGroupId, String lobId) {
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into lob_group_mapping (lob_id,db_group_id) values (?,?)");
+			preparedStatement.setString(1, lobId);
+			preparedStatement.setString(2, dbGroupId);
+			preparedStatement.executeUpdate();
+			return 0;
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			return 1;
+		}
+	}
+	
+	public ArrayList<HashMap<String, String>> getDatabaseChangeLobsStatus(int bulkSize, String LastDBReqId) {
+		ResultSet rs = null;
+		String lastDBReqIdQuery = (LastDBReqId == null) ? "" : LastDBReqId;
+		ArrayList<HashMap<String,String>> databaseChangeLobsStatus = new ArrayList<HashMap<String,String>>();
+		try{
+			PreparedStatement preparedStatement = conn.prepareStatement("select db_request_id, code from db_requests where db_request_id > ? limit ?");
+			preparedStatement.setString(1, lastDBReqIdQuery);
+			preparedStatement.setInt(2, bulkSize);
+			rs = preparedStatement.executeQuery();
+			PreparedStatement statusPreparedStatement = conn.prepareStatement("select lobgm.lob_id, dbrs.status from db_request_status dbrs, lob_group_mapping lobgm where dbrs.db_group_id = lobgm.db_group_id and dbrs.db_request_id=?");
+			ResultSet statusRs = null;
+			while (rs.next()){
+				HashMap<String,String> dbChangeStatus = new HashMap<String,String>();
+				dbChangeStatus.put("db_request_id", rs.getString("db_request_id"));
+				dbChangeStatus.put("db_request_code", rs.getString("code"));
+				statusPreparedStatement.setString(1, rs.getString("db_request_id"));
+				statusRs = statusPreparedStatement.executeQuery();
+				while (statusRs.next()){
+					dbChangeStatus.put(statusRs.getString("lob_id"), statusRs.getString("status"));
+				}
+				databaseChangeLobsStatus.add(dbChangeStatus);
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return databaseChangeLobsStatus;
+	}
+
 }

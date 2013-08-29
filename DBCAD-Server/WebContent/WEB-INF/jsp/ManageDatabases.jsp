@@ -45,7 +45,7 @@
 				        // we have the response
 				        $('#info').html(response);
 				        $('#types-table-body').append('<tr class="table_row"><td>'
-								+dbGroupId+'</td><td>'+dbHost+'</td>'+dbPort+'</td>'+dbSid+'</td>'+
+								+dbGroupId+'</td><td>'+dbHost+'</td><td>'+dbPort+'</td><td>'+dbSid+'</td>'+
 								'<td><input type="button" value="Delete" onclick="doDeleteDBInstance(\''+response+'\',this)"></td></tr>');
 				        
 			        },
@@ -93,6 +93,53 @@
 			        }
 		        });
 	        }
+	        function addDbGroup() {
+		        // get the form values
+		        var dbGroupId = $('#new_group_id_input').val();
+		        var dbTypeId = $('#new_group_type_select').val();
+		        var dbLobList = [];
+		        $("#new_group_lob_select :selected").each(function(){
+		        	dbLobList.push($(this).val()); 
+		        });
+		        
+		        $.ajax({
+			        type: "POST",
+			        url: "rest/db_group/"+dbGroupId,
+			        data: "dbTypeId=" + dbTypeId + "&dbLobList=["+ dbLobList +"]&_method=PUT",
+			        success: function(response){
+				        // we have the response
+				        $('#info').html(response);
+				        $('#groups-table-body').append('<tr class="table_row"><td>'
+								+dbGroupId+'</td><td>'+dbTypeId+'</td><td>'+dbLobList+'</td>'+
+								'<td><input type="button" value="Delete" onclick="deleteDBGroup(\''+dbGroupId+'\',this)"></td></tr>');
+				        
+			        },
+			        error: function(e){
+			        	$('#info').html("error");
+			        	alert('Error: ' + e.responseText);
+			        }
+		        });
+	        }
+	        function deleteDBGroup(dbGroupId,object) {
+		        $.ajax({
+			        type: "POST",
+			        url: "rest/db_group/"+dbGroupId,
+			        data: "_method=DELETE",
+			        success: function(response){
+				        // we have the response
+				        $('#info').html(response);
+				        var p=object.parentNode.parentNode;
+				        p.parentNode.removeChild(p);
+			        },
+			        error: function(e){
+			        	$('#info').html("error");
+			        }
+		        });
+	        }
+	        function addLobToList(){
+	        	$('#new_group_lob_select').append('<option value="'+$('#new_lob_id_input').val()+'">'+$('#new_lob_id_input').val()+'</option>');
+	        }
+	        
 	        function load()
 	        {
 	        	$('#manage-databases-link').addClass("current");
@@ -107,6 +154,7 @@
 		<ul class="tabs" data-persist="true">
         	<li class="selected"><a href="#database-types-div"><span>Database Types</span></a></li>
         	<li class=""><a href="#database-instances-div"><span>Database Instances</span></a></li>
+        	<li class=""><a href="#database-groups-div"><span>Database Groups</span></a></li>
     	</ul>
     	<div class="tabcontents">
             <div id="database-types-div" style="display: block;">
@@ -132,6 +180,7 @@
 			                    <tr>
 			                        <th>Database Vendor</th>
 			                        <th>Database Role</th>
+			                        <th></th>
 			                    </tr>
 			                </thead>
 			                <tbody id="types-table-body">
@@ -147,34 +196,68 @@
                 
             </div>
             <div id="database-instances-div" style="display: none;">
-            	<form:select path="options" id="group_select">
-		    <form:options items="${options.db_groups}" />
-		</form:select>
-		<input type="text" id="host" name="host" class="input_field"/>
-		<input type="text" id="port" name="port" class="input_field"/>
-		<input type="text" id="sid" name="sid" class="input_field"/>
-		<div id="info" style="color: green;">info...</div>
-<br/>
+	           	<form:select path="options" id="group_select">
+			    	<form:options items="${options.db_groups}" />
+				</form:select>
+				<input type="text" id="host" name="host" class="input_field"/>
+				<input type="text" id="port" name="port" class="input_field"/>
+				<input type="text" id="sid" name="sid" class="input_field"/>
+				<div id="info" style="color: green;">info...</div>
+					<br/>
  
-<input type="button" value="Add" onclick="addDbInstance()">
+					<input type="button" value="Add" onclick="addDbInstance()">
      
-			<table id="types-table" class="table">
+				<table id="types-table" class="table">
+	                <thead>
+	                    <tr>
+	                        <th>Database Group Id</th>
+	                        <th>Database Host</th>
+	                        <th>Database Port</th>
+	                        <th>Database Sid</th>
+	                        <th></th>
+	                    </tr>
+	                </thead>
+	                <tbody id="types-table-body">
+	                    <c:forEach items="${instance_table_values}" var="tableRow">
+	                        <tr class="table_row">    
+	                            <td>${tableRow.db_group_id}</td>
+	                            <td>${tableRow.host}</td>
+	                            <td>${tableRow.port}</td>
+	                            <td>${tableRow.sid}</td>
+	                            <td><input type="button" value="Delete" onclick="doDeleteDBInstance('${tableRow.db_id}',this)"></td>
+	                        </tr>
+	                    </c:forEach>
+	                </tbody>
+	            </table>
+            </div>
+            <div id="database-groups-div" style="display: none;">
+				<input type="text" id="new_group_id_input" name="new_group_id_input" class="input_field"/>
+				<form:select path="options" id="new_group_type_select">
+			    	<form:options items="${options.db_types}" />
+				</form:select>
+				<form:select multiple="true" path="options" id="new_group_lob_select">
+		    		<form:options items="${options.lobs}" />
+				</form:select>
+				<input type="text" id="new_lob_id_input" name="new_lob_id_input" class="input_field"/>
+				<input type="button" value="Add lob to list" onclick="addLobToList()">
+				<br/>
+				<input type="button" value="Add" onclick="addDbGroup()">
+				<table id="groups-table" class="table">
                 <thead>
                     <tr>
                         <th>Database Group Id</th>
-                        <th>Database Host</th>
-                        <th>Database Port</th>
-                        <th>Database Sid</th>
+                        <th>Database Type</th>
+                        <th>Lobs</th>
+                        <th></th>
                     </tr>
                 </thead>
-                <tbody id="types-table-body">
-                    <c:forEach items="${instance_table_values}" var="tableRow">
+                <tbody id="groups-table-body">
+                    <c:forEach items="${group_table_values}" var="tableRow">
                         <tr class="table_row">    
                             <td>${tableRow.db_group_id}</td>
-                            <td>${tableRow.host}</td>
-                            <td>${tableRow.port}</td>
-                            <td>${tableRow.sid}</td>
-                            <td><input type="button" value="Delete" onclick="doDeleteDBInstance('${tableRow.db_id}',this)"></td>
+                            <td>${tableRow.db_type_id}</td>
+                            <td>${tableRow.db_group_lob_mapping}</td>
+                            <td><input type="button" value="Delete" onclick="deleteDBGroup('${tableRow.db_group_id}',this)"></td>
                         </tr>
                     </c:forEach>
                 </tbody>
@@ -186,3 +269,4 @@
 	<%@ include file="BodyFooter.jsp" %>        
 </body>
 </html>
+

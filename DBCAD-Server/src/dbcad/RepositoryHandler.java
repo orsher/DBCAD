@@ -253,6 +253,7 @@ public class RepositoryHandler {
 																		"and dbr.db_request_id=? and lobgm.lob_id=?");
 			preparedStatement.setString(1, dbChangeId);
 			preparedStatement.setString(2, lobId);
+			System.out.println(preparedStatement.toString());
 			return (preparedStatement.executeUpdate() > 0) ? true : false;
 		}catch(Exception e){
 			e.printStackTrace();

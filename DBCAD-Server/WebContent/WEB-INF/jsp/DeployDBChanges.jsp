@@ -9,18 +9,10 @@
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
 	        function doAjaxPost() {
-	        	var checked_db_chages = [];
-		        $(".db_change_checkbox").each(function () {
-	               							if (this.checked) {
-	               								checked_db_chages.push($(this).val());
-	               								console.log("Checked");
-	               							}
-           								});
-		
 		        $.ajax({
 			        type: "POST",
 			        url: "rest/deploy/"+$('#lob_select :selected').val(),
-			        data: "db_changes=["+checked_db_chages+ "]&_method=PUT",
+			        data: "db_changes=["+checkedChangeIds+ "]&_method=PUT",
 			        success: function(response){
 				        // we have the response
 				        $('#info').html(response);
@@ -38,6 +30,8 @@
 			        data: "page="+i,
 			        success: function(response){
 			        	$('#db-changes-table').replaceWith(response);
+			        	addCheckBoxListener();
+			        	setCheckBoxesStatus();
 			        },
 			        error: function(e){
 			        	alert('Error: ' + e.responseText);
@@ -47,6 +41,30 @@
 	        function load()
 	        {
 	        	$('#deploy-link').addClass("current");
+	        	addCheckBoxListener();
+	        }
+	        
+	        var checkedChangeIds = [];
+	        function addCheckBoxListener(){
+		        $('#db-changes-table-body').on('change','input:checkbox', function() {
+		            if( $(this).is(":checked") ) {
+		            	checkedChangeIds.push($(this).val());
+		            }
+		            else{
+		            	if ((index = checkedChangeIds.indexOf($(this).val())) !== -1){
+		            		checkedChangeIds.splice(index,1);	
+		            	}
+		            }
+		            $('#checked-db-changes-div').html(checkedChangeIds.toString());
+		        });
+	        }
+	        
+	        function setCheckBoxesStatus(){
+	        	$(".db_change_checkbox").each(function () {
+						if (checkedChangeIds.indexOf($(this).val()) !== -1) {
+							$(this).prop('checked', true);
+						}
+					});
 	        }
         </script>
 </head>
@@ -56,8 +74,8 @@
 		    <form:options items="${options.lobs}" />
 		</form:select>
 		<br/>
- 
-<input type="button" value="Deploy" onclick="doAjaxPost()">
+ <input type="button" value="Deploy" onclick="doAjaxPost()">
+ <div id="checked-db-changes-div"></div>
      
 		<%@ include file="DeployDBChangesTable.jsp" %>
 		

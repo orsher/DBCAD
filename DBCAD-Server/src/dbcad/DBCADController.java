@@ -58,7 +58,7 @@ public class DBCADController {
 		options = new HashMap<String, ArrayList<String>>();
 		options.put("lobs", repHandler.getLobs());
 		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
-		return new ModelAndView("DeployDBChanges", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS));
+		return new ModelAndView("DeployDBChanges", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("currentPage",1);
 	}
 	
 	@RequestMapping(value = "/getDbChangesTablePage", method = RequestMethod.POST)
@@ -70,7 +70,7 @@ public class DBCADController {
 		options = new HashMap<String, ArrayList<String>>();
 		options.put("lobs", repHandler.getLobs());
 		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
-		return new ModelAndView("DeployDBChangesTable", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS));
+		return new ModelAndView("DeployDBChangesTable", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("currentPage",page);
 	}
 
 	@RequestMapping(value = "/rest/deploy/{lob_id}", method = RequestMethod.PUT)

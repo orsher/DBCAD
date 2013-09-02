@@ -328,3 +328,67 @@ th a:hover {color: #F06; text-decoration: underline;}
 thead tr {color: #555; font-size: 0.8em;}
 tr {font: 12px sans-serif; background: #F8F8F8; color: #666;}
 tbody tr:hover {background: #FFF;}
+
+
+
+#pagination-flickr{
+border:0; 
+margin:0;
+color:#0063e3;
+display:block;
+text-decoration:none;
+padding:0
+}
+
+#pagination-flickr li{
+padding:0;
+font-size:11px;
+list-style:none;
+border:solid 1px #DDDDDD;
+padding:3px 6px;
+/*margin-right:2px;
+border:0;*/
+margin:0;
+display:inline;
+}
+
+#pagination-flickr .previous-off,
+#pagination-flickr .next-off {
+color:#666666;
+font-weight:bold;
+padding:3px 4px;
+border: 0
+}
+
+#pagination-flickr li.previous:hover,
+#pagination-flickr li.next:hover{
+	cursor: hand;	
+	border:0
+}
+
+#pagination-flickr li.previous-off:hover,
+#pagination-flickr li.next-off:hover{
+	cursor: default;
+	border:0
+}
+
+#pagination-flickr .next,
+#pagination-flickr .previous{
+font-weight:bold;
+border: 0
+} 
+
+
+#pagination-flickr .active{
+color:#ff0084;
+font-weight:bold;
+display:block;
+float:left;
+padding:4px 6px;
+}
+
+#pagination-flickr li:hover{
+border:solid 1px #666666;
+cursor: hand;
+}
+

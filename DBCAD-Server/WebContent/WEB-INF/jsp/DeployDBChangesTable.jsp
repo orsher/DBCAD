@@ -22,17 +22,36 @@
                         	</c:forEach>
                         </tr>
                     </c:forEach>
-                    <td colspan="${fn:length(options.lobs)+2}">
-	                    <c:forEach begin="1" end="${noOfPages}" var="i">
-			                <c:choose>
-			                    <c:when test="${0 eq i}">
-			                      ${i}  
-			                    </c:when>
-			                    <c:otherwise>
-			                        <div onclick="getPageNumber('${i}')">${i}</div>
-			                    </c:otherwise>
-			                </c:choose>
-		            	</c:forEach>
+                    <td colspan="${fn:length(options.lobs)+2}" style="text-align: center;">
+	                    <ul id="pagination-flickr">
+	                    	<c:choose>
+	                    		<c:when test="${currentPage == 1}">
+	                    			<li class="previous-off">« Previous</li>
+	                    		</c:when>
+	                    		<c:otherwise>
+	                    			<li class="previous" onclick="getPageNumber('${currentPage -1}')">« Previous</li>
+	                    		</c:otherwise>  
+	                    	</c:choose>
+		                    <c:forEach begin="1" end="${noOfPages}" var="i">
+				                <c:choose>
+				                    <c:when test="${currentPage eq i}">
+				                      ${i}  
+				                    </c:when>
+				                    <c:otherwise>
+				                        <li onclick="getPageNumber('${i}')">${i}</li>
+				                    </c:otherwise>
+				                </c:choose>
+			            	</c:forEach>
+			            	<c:choose>
+	                    		<c:when test="${currentPage == noOfPages}">
+	                    			<li class="next-off" >Next »</li>
+	                    		</c:when>
+	                    		<c:otherwise>
+	                    			<li class="next" onclick="getPageNumber('${currentPage +1}')">Next »</li>
+	                    		</c:otherwise>  
+	                    	</c:choose>
+			            	
+			            </ul>
 	            	</td>
                 </tbody>
             </table>

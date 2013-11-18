@@ -8,6 +8,7 @@
     <link href="css/dbcad.css" rel="stylesheet" type="text/css" />
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
+        	var currentManageSchemaPage=1;
 	        function addDbType() {
 		        // get the form values
 		        var dbVendor = $('#db_vendor').val();
@@ -136,6 +137,72 @@
 			        }
 		        });
 	        }
+	        function refreshAvailableDBIds() {
+	        	
+		        $.ajax({
+			        type: "POST",
+			        url: "rest/db_instance/",
+			        data: "_method=GET"+"&dbTypeId="+$("#new_schmea_type_select option:selected").text(),
+			        success: function(response){
+			        	var dbIds = JSON.parse(response);
+			        	console.log(dbIds);
+			        	$("#new_schema_deployable_select").empty();
+			        	$.each(dbIds,function(index,value){$("#new_schema_deployable_select").append('<option val="'+value+'">'+value+'</option>');});
+			        },
+			        error: function(e){
+			        	$('#info').html("error");
+			        }
+		        });
+	        }
+	        function addDbSchema() {
+		        // get the form values
+		        var dbSchemaId = $('#new_schema_id_input').val();
+		        var dbSchemaName = $('#new_schema_name_input').val();
+		        var dbTypeId = $('#new_schmea_type_select').val();
+		        var dbDeployableList = [];
+		        $("#new_schema_deployable_select :selected").each(function(){
+		        	dbDeployableList.push('"'+$(this).val()+'"'); 
+		        });
+		        $.ajax({
+			        type: "POST",
+			        url: "rest/db_schema/"+dbSchemaId,
+			        data: "dbTypeId=" + dbTypeId + "&dbDeployableList=["+ dbDeployableList +"]&schemaName="+dbSchemaName+"&_method=PUT",
+			        success: function(response){
+			        	getSchemasPageNumber(currentManageSchemaPage);
+			        },
+			        error: function(e){
+			        	$('#info').html("error");
+			        	alert('Error: ' + e.responseText);
+			        }
+		        });
+	        }
+	        function deleteDBSchema(dbSchemaId,object) {
+		        $.ajax({
+			        type: "POST",
+			        url: "rest/db_schema/"+dbSchemaId,
+			        data: "_method=DELETE",
+			        success: function(response){
+			        	 getSchemasPageNumber(currentManageSchemaPage);
+			        },
+			        error: function(e){
+			        	$('#info').html("error");
+			        }
+		        });
+	        }
+	        function getSchemasPageNumber(i) {
+		        $.ajax({
+			        type: "POST",
+			        url: "getDbSchemasTablePage",
+			        data: "page="+i,
+			        success: function(response){
+			        	$('#schemas-table').replaceWith(response);
+			        	currentManageSchemaPage=i;
+			        },
+			        error: function(e){
+			        	alert('Error: ' + e.responseText);
+			        }
+		        });
+	        }
 	        function addLobToList(){
 	        	$('#new_group_lob_select').append('<option value="'+$('#new_lob_id_input').val()+'">'+$('#new_lob_id_input').val()+'</option>');
 	        }
@@ -155,6 +222,7 @@
         	<li class="selected"><a href="#database-types-div"><span>Database Types</span></a></li>
         	<li class=""><a href="#database-instances-div"><span>Database Instances</span></a></li>
         	<li class=""><a href="#database-groups-div"><span>Database Groups</span></a></li>
+        	<li class=""><a href="#database-schemas-div"><span>Database Schemas</span></a></li>
     	</ul>
     	<div class="tabcontents">
             <div id="database-types-div" style="display: block;">
@@ -263,6 +331,22 @@
                 </tbody>
             </table>
             </div>
+			<div id="database-schemas-div" style="display: none;">
+				<input type="text" id="new_schema_id_input" name="new_schema_id_input" class="input_field"/>
+				<input type="text" id="new_schema_name_input" name="new_schema_name_input" class="input_field"/>
+				<form:select path="options" id="new_schmea_type_select" onchange="refreshAvailableDBIds()">
+			    	<form:options items="${options.db_types}" />
+				</form:select>
+				<form:select multiple="true" path="options" id="new_schema_deployable_select">
+		    		<form:options />
+				</form:select>
+				<br/>
+				<input type="button" value="Add" onclick="addDbSchema()">
+
+
+				<%@ include file="ManageDatabaseSchemaTable.jsp" %>
+            </div>
+    		    		
     </div>
 
 		

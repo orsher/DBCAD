@@ -9,6 +9,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import org.json.JSONArray;
+import org.json.JSONObject;
+
 /*
  * Filling dbcad:
  * 
@@ -24,25 +27,33 @@ import java.util.concurrent.atomic.AtomicInteger;
  * 
  */
 public class RepositoryHandler {
-	private static Connection conn = null;
+//	private static Connection conn = null;
+	Datasource datasource;
 	public RepositoryHandler(){
-		if (conn == null){
-			try {
-				Class.forName("com.mysql.jdbc.Driver");
-				System.out.println("Starting DB Connection");
-				conn = DriverManager.getConnection("jdbc:mysql://tlv-mysql-dev:3407/dbcad?user=dbcad_user&password=dbcad4u");
-				System.out.println("Connected to DB");
-			} catch (Exception e) {
-				System.out.println("Failure Connecting to Repository" );
-				e.printStackTrace();
-			}
+		try {
+			datasource = Datasource.getInstance();
+		} catch (Exception e) {
+			System.out.println("Failure Connecting to Repository" );
+			e.printStackTrace();
 		}
+//		if (conn == null){
+//			try {
+//				Class.forName("com.mysql.jdbc.Driver");
+//				System.out.println("Starting DB Connection");
+//				conn = DriverManager.getConnection("jdbc:mysql://tlv-mysql-dev:3407/dbcad?user=dbcad_user&password=dbcad4u");
+//				System.out.println("Connected to DB");
+//			} catch (Exception e) {
+//				System.out.println("Failure Connecting to Repository" );
+//				e.printStackTrace();
+//			}
+//		}
 	}
 	
 	protected boolean checkDbChanges(String dbChangesId, String lob_id){
 		ResultSet rs = null;
 		String status = null;
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select * from db_request_status dbrs, lob_group_mapping lobgm where dbrs.db_group_id = lobgm.db_group_id and dbrs.db_request_id=? and lobgm.lob_id=?");
 			preparedStatement.setString(1, dbChangesId);
 			preparedStatement.setString(2, lob_id);
@@ -64,7 +75,25 @@ public class RepositoryHandler {
 		ResultSet rs = null;
 		ArrayList<String> databaseIds = new ArrayList<String>();
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_id from database_instance");
+			rs = preparedStatement.executeQuery();
+			while (rs.next()){
+				databaseIds.add(rs.getString("db_id"));
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return databaseIds;
+	}
+	
+	protected ArrayList<String> getDatabaseIds(String dbTypeId){
+		ResultSet rs = null;
+		ArrayList<String> databaseIds = new ArrayList<String>();
+		try{
+			Connection conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("select db_id from database_instance di, database_groups dg where di.db_group_id = dg.db_group_id and dg.db_type_id=?");
+			preparedStatement.setString(1, dbTypeId);
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
 				databaseIds.add(rs.getString("db_id"));
@@ -79,6 +108,7 @@ public class RepositoryHandler {
 		ResultSet rs = null;
 		ArrayList<String> databaseVendors = new ArrayList<String>();
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_vendor from database_type");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -94,6 +124,7 @@ public class RepositoryHandler {
 		ResultSet rs = null;
 		ArrayList<String> lobs = new ArrayList<String>();
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select distinct lob_id from lob_group_mapping");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -110,6 +141,7 @@ public class RepositoryHandler {
 		String lastDBReqIdQuery = (LastDBReqId == null) ? "" : LastDBReqId;
 		ArrayList<String> dbRequestIds = new ArrayList<String>();
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_request_id from db_requests where db_request_id > ? limit ?");
 			preparedStatement.setString(1, lastDBReqIdQuery);
 			preparedStatement.setInt(2, bulkSize);
@@ -127,6 +159,7 @@ public class RepositoryHandler {
 		ResultSet rs = null;
 		ArrayList<String> databaseRoles = new ArrayList<String>();
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_role from database_type");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -142,6 +175,7 @@ public class RepositoryHandler {
 		ResultSet rs = null;
 		ArrayList<HashMap<String,String>> databaseTypes = new ArrayList<HashMap<String,String>>();
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_type_id,db_role,db_vendor from database_type");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -159,6 +193,7 @@ public class RepositoryHandler {
 	
 	protected String addDatabaseType(String dbVendor, String dbRole){
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into database_type (db_type_id,db_role,db_vendor) values (?,?,?)");
 			preparedStatement.setString(1, dbVendor+" "+dbRole);
 			preparedStatement.setString(2, dbRole);
@@ -172,6 +207,7 @@ public class RepositoryHandler {
 	
 	protected boolean deleteDatabaseType(String dbTypeId){
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("delete from database_type where db_type_id = ?");
 			preparedStatement.setString(1, dbTypeId);
 			return (preparedStatement.executeUpdate() > 0);
@@ -185,6 +221,7 @@ public class RepositoryHandler {
 		ResultSet rs = null;
 		ArrayList<String> databaseGroups = new ArrayList<String>();
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_group_id from database_groups");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -200,6 +237,7 @@ public class RepositoryHandler {
 		ResultSet rs = null;
 		ArrayList<HashMap<String,String>> databaseInstances = new ArrayList<HashMap<String,String>>();
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_id, db_group_id,host,port,sid from database_instance");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -219,6 +257,7 @@ public class RepositoryHandler {
 
 	protected String addDatabaseInstance(String db_group_id, String host,Integer port, String sid ){
 	try{
+		Connection conn = datasource.getConnection();
 		PreparedStatement preparedStatement = conn.prepareStatement("insert into database_instance (db_id,db_group_id,host,port,sid) values (?,?,?,?,?)");
 		preparedStatement.setString(1, host+":"+port+":"+sid);
 		preparedStatement.setString(2, db_group_id);
@@ -233,6 +272,7 @@ public class RepositoryHandler {
   }
 	protected boolean deleteDatabaseInstance(String dbInstanceId){
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("delete from database_instance where db_id = ?");
 			preparedStatement.setString(1, dbInstanceId);
 			return (preparedStatement.executeUpdate() > 0);
@@ -244,6 +284,7 @@ public class RepositoryHandler {
 
 	public boolean markDbChangeAsDeployed(String dbChangeId, String lobId) {
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_request_status (db_request_id,db_group_id,status,update_date) "+
 																		"select dbr.db_request_id,dbg.db_group_id,'DONE',now() from db_requests dbr, db_schema dbs, database_groups dbg, lob_group_mapping lobgm "+ 
 																		"where dbr.schema_id = dbs.schema_id "+
@@ -260,10 +301,11 @@ public class RepositoryHandler {
 		}
 	}
 
-	public ArrayList<String> getDatabaseSchemas() {
+	public ArrayList<String> getDatabaseSchemaIds() {
 		ResultSet rs = null;
 		ArrayList<String> databaseSchemas = new ArrayList<String>();
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select schema_id from db_schema");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -277,6 +319,7 @@ public class RepositoryHandler {
 
 	public int addDatabaseChange(String dbChangeId, String schemaId,String dbChangeText) {
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_requests (db_request_id,schema_id,code) values (?,?,?)");
 			preparedStatement.setString(1, dbChangeId);
 			preparedStatement.setString(2, schemaId);
@@ -291,6 +334,7 @@ public class RepositoryHandler {
 	
 	public int deleteDatabaseChange(String dbChangeId) {
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("delete from db_requests where db_request_id=?");
 			preparedStatement.setString(1, dbChangeId);
 			preparedStatement.executeUpdate();
@@ -305,6 +349,7 @@ public class RepositoryHandler {
 		ResultSet rs = null;
 		ArrayList<String> databaseTypesIds = new ArrayList<String>();
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_type_id from database_type");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -321,6 +366,7 @@ public class RepositoryHandler {
 		ResultSet rsLobs = null;
 		ArrayList<HashMap<String,String>> databaseGroups = new ArrayList<HashMap<String,String>>();
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_group_id, db_type_id from database_groups");
 			rsGroups = preparedStatement.executeQuery();
 			while (rsGroups.next()){
@@ -348,6 +394,7 @@ public class RepositoryHandler {
 	
 	public int addDatabaseGroup(String dbGroupId, String dbTypeId) {
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into database_groups (db_group_id,db_type_id) values (?,?)");
 			preparedStatement.setString(1, dbGroupId);
 			preparedStatement.setString(2, dbTypeId);
@@ -362,6 +409,7 @@ public class RepositoryHandler {
 
 	public int deleteDatabaseGroup(String dbGroupId) {
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("delete from database_groups where db_group_id=?");
 			preparedStatement.setString(1, dbGroupId);
 			preparedStatement.executeUpdate();
@@ -375,6 +423,7 @@ public class RepositoryHandler {
 
 	public int addDatabaseGroupLobMapping(String dbGroupId, String lobId) {
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into lob_group_mapping (lob_id,db_group_id) values (?,?)");
 			preparedStatement.setString(1, lobId);
 			preparedStatement.setString(2, dbGroupId);
@@ -391,6 +440,7 @@ public class RepositoryHandler {
 		ResultSet rs = null;
 		ArrayList<HashMap<String,String>> databaseChangeLobsStatus = new ArrayList<HashMap<String,String>>();
 		try{
+			Connection conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_request_id, code from db_requests limit ?,?");
 			preparedStatement.setInt(1, offset);
 			preparedStatement.setInt(2, bulkSize);
@@ -419,6 +469,86 @@ public class RepositoryHandler {
 			e.printStackTrace();
 		}
 		return databaseChangeLobsStatus;
+	}
+
+	public ArrayList<DBSchema> getDatabaseSchemas(int offset, int bulkSize, AtomicInteger totalRowNumber) {
+		ResultSet rs = null;
+		ArrayList<DBSchema> databaseSchemas = new ArrayList<DBSchema>();
+		try{
+			Connection conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS schema_id, schema_name, db_type_id from db_schema limit ?,?");
+			preparedStatement.setInt(1, offset);
+			preparedStatement.setInt(2, bulkSize);
+			rs = preparedStatement.executeQuery();
+			Statement stmt= conn.createStatement();
+			ResultSet numRowsRs = stmt.executeQuery("SELECT FOUND_ROWS()");
+            if(numRowsRs.next()){
+            	totalRowNumber.set(numRowsRs.getInt(1));
+            }
+            numRowsRs.close();
+			PreparedStatement deployablesPreparedStatement = conn.prepareStatement("select db_id from deployable_instance_schema where schema_id=?");
+			ResultSet deployablesRs = null;
+			while (rs.next()){
+				deployablesPreparedStatement.setString(1, rs.getString("schema_id"));
+				deployablesRs = deployablesPreparedStatement.executeQuery();
+				ArrayList<String> deployableInstances = new ArrayList<String>();
+				while (deployablesRs.next()){
+					deployableInstances.add(deployablesRs.getString("db_id"));
+				}
+				DBSchema database_schema = new DBSchema(rs.getString("schema_id"),rs.getString("schema_name"),rs.getString("db_type_id"),deployableInstances);
+				databaseSchemas.add(database_schema);
+			}
+			rs.close();
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		return databaseSchemas;
+	}
+
+	public int addDatabaseSchema(String schemaId, String schemaName,
+			String dbTypeId) {
+		try{
+			Connection conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_schema (schema_id,schema_name,db_type_id) values (?,?,?)");
+			preparedStatement.setString(1, schemaId);
+			preparedStatement.setString(2, schemaName);
+			preparedStatement.setString(3, dbTypeId);
+			preparedStatement.executeUpdate();
+			return 0;
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			return 1;
+		}
+	}
+
+	public int addDeployableDBInstance(String schemaId, String dbId) {
+		try{
+			Connection conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into deployable_instance_schema (db_id,schema_id) values (?,?)");
+			preparedStatement.setString(1, dbId);
+			preparedStatement.setString(2, schemaId);
+			preparedStatement.executeUpdate();
+			return 0;
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			return 1;
+		}
+	}
+
+	public int deleteDatabaseSchema(String dbSchemaId) {
+		try{
+			Connection conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("delete from db_schema where schema_id=?");
+			preparedStatement.setString(1, dbSchemaId);
+			preparedStatement.executeUpdate();
+			return 0;
+		}
+		catch(Exception e){
+			e.printStackTrace();
+			return 1;
+		}
 	}
 
 }

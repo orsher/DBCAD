@@ -392,3 +392,6 @@ border:solid 1px #666666;
 cursor: hand;
 }
 
+.dividing-column {
+	border-right: 3px solid #FFF;
+}

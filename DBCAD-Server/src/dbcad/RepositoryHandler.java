@@ -663,7 +663,7 @@ public class RepositoryHandler {
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_request_id, code from db_requests limit ?,?");
+			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_request_id, schema_id, code from db_requests limit ?,?");
 			preparedStatement.setInt(1, offset);
 			preparedStatement.setInt(2, bulkSize);
 			rs = preparedStatement.executeQuery();
@@ -679,6 +679,7 @@ public class RepositoryHandler {
 				HashMap<String,String> dbChangeStatus = new HashMap<String,String>();
 				dbChangeStatus.put("db_request_id", rs.getString("db_request_id"));
 				dbChangeStatus.put("db_request_code", rs.getString("code"));
+				dbChangeStatus.put("schema_id", rs.getString("schema_id"));
 				statusPreparedStatement.setString(1, rs.getString("db_request_id"));
 				statusRs = statusPreparedStatement.executeQuery();
 				while (statusRs.next()){

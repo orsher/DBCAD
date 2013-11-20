@@ -7,6 +7,7 @@
                     <tr>
                         <th></th>
                         <th>Database Change ID</th>
+                        <th class="dividing-column">Schema ID</th>
                         <c:forEach items="${options.lobs}" var="lob">
                         	<th>${lob}</th>
                         </c:forEach>
@@ -17,12 +18,13 @@
                         <tr class="table_row" title="${dbChange.db_request_code}">
                         	<td><input type="checkbox" class="db_change_checkbox" value="${dbChange.db_request_id}" id="${dbChange.db_request_id}"></td>
                             <td>${dbChange.db_request_id}</td>
+                            <td class="dividing-column">${dbChange.schema_id}</td>
                             <c:forEach items="${options.lobs}" var="lob">
                         		<td>${dbChange[lob]}</td>
                         	</c:forEach>
                         </tr>
                     </c:forEach>
-                    <td colspan="${fn:length(options.lobs)+2}" style="text-align: center;">
+                    <td colspan="${fn:length(options.lobs)+3}" style="text-align: center;">
 	                    <ul id="pagination-flickr">
 	                    	<c:choose>
 	                    		<c:when test="${currentPage == 1}">

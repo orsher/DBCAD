@@ -52,8 +52,9 @@ public class RepositoryHandler {
 	protected boolean checkDbChanges(String dbChangesId, String lob_id){
 		ResultSet rs = null;
 		String status = null;
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select * from db_request_status dbrs, lob_group_mapping lobgm where dbrs.db_group_id = lobgm.db_group_id and dbrs.db_request_id=? and lobgm.lob_id=?");
 			preparedStatement.setString(1, dbChangesId);
 			preparedStatement.setString(2, lob_id);
@@ -68,14 +69,21 @@ public class RepositoryHandler {
 		if (status != null && status.equals("DONE")){
 			return true;
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return false;
 	}
 	
 	protected ArrayList<String> getDatabaseIds(){
 		ResultSet rs = null;
 		ArrayList<String> databaseIds = new ArrayList<String>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_id from database_instance");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -84,14 +92,21 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return databaseIds;
 	}
 	
 	protected ArrayList<String> getDatabaseIds(String dbTypeId){
 		ResultSet rs = null;
 		ArrayList<String> databaseIds = new ArrayList<String>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_id from database_instance di, database_groups dg where di.db_group_id = dg.db_group_id and dg.db_type_id=?");
 			preparedStatement.setString(1, dbTypeId);
 			rs = preparedStatement.executeQuery();
@@ -101,14 +116,21 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return databaseIds;
 	}
 	
 	protected ArrayList<String> getDatabaseVendors(){
 		ResultSet rs = null;
 		ArrayList<String> databaseVendors = new ArrayList<String>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_vendor from database_type");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -117,21 +139,34 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return databaseVendors;
 	}
 	
 	protected ArrayList<String> getLobs(){
 		ResultSet rs = null;
 		ArrayList<String> lobs = new ArrayList<String>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select distinct lob_id from lob_group_mapping");
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("select lob_id from lobs order by sequence_number");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
 				lobs.add(rs.getString("lob_id"));
 			}
 		}catch(Exception e){
 			e.printStackTrace();
+		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
 		}
 		return lobs;
 	}
@@ -140,8 +175,9 @@ public class RepositoryHandler {
 		ResultSet rs = null;
 		String lastDBReqIdQuery = (LastDBReqId == null) ? "" : LastDBReqId;
 		ArrayList<String> dbRequestIds = new ArrayList<String>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_request_id from db_requests where db_request_id > ? limit ?");
 			preparedStatement.setString(1, lastDBReqIdQuery);
 			preparedStatement.setInt(2, bulkSize);
@@ -152,14 +188,21 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return dbRequestIds;
 	}
 	
 	protected ArrayList<String> getDatabaseRoles(){
 		ResultSet rs = null;
 		ArrayList<String> databaseRoles = new ArrayList<String>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_role from database_type");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -168,14 +211,21 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return databaseRoles;
 	}
 	
 	protected ArrayList<HashMap<String,String>> getDatabaseTypes(){
 		ResultSet rs = null;
 		ArrayList<HashMap<String,String>> databaseTypes = new ArrayList<HashMap<String,String>>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_type_id,db_role,db_vendor from database_type");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -188,30 +238,62 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return databaseTypes;
 	}
 	
 	protected String addDatabaseType(String dbVendor, String dbRole){
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into database_type (db_type_id,db_role,db_vendor) values (?,?,?)");
 			preparedStatement.setString(1, dbVendor+" "+dbRole);
 			preparedStatement.setString(2, dbRole);
 			preparedStatement.setString(3, dbVendor);
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
 			return (preparedStatement.executeUpdate() > 0) ? dbVendor+" "+dbRole : "";
 		}catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
 			e.printStackTrace();
 			return dbVendor+" "+dbRole;
 		}
 	}
 	
 	protected boolean deleteDatabaseType(String dbTypeId){
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("delete from database_type where db_type_id = ?");
 			preparedStatement.setString(1, dbTypeId);
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
 			return (preparedStatement.executeUpdate() > 0);
 		}catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
 			e.printStackTrace();
 			return false;
 		}
@@ -220,8 +302,9 @@ public class RepositoryHandler {
 	protected ArrayList<String> getDatabaseGroupIds(){
 		ResultSet rs = null;
 		ArrayList<String> databaseGroups = new ArrayList<String>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_group_id from database_groups");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -230,14 +313,21 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return databaseGroups;
 	}
 	
 	protected ArrayList<HashMap<String,String>> getDatabaseInstances(){
 		ResultSet rs = null;
 		ArrayList<HashMap<String,String>> databaseInstances = new ArrayList<HashMap<String,String>>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_id, db_group_id,host,port,sid from database_instance");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -252,39 +342,72 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return databaseInstances;
 	}
 
 	protected String addDatabaseInstance(String db_group_id, String host,Integer port, String sid ){
+		Connection conn=null;
 	try{
-		Connection conn = datasource.getConnection();
+		conn = datasource.getConnection();
 		PreparedStatement preparedStatement = conn.prepareStatement("insert into database_instance (db_id,db_group_id,host,port,sid) values (?,?,?,?,?)");
 		preparedStatement.setString(1, host+":"+port+":"+sid);
 		preparedStatement.setString(2, db_group_id);
 		preparedStatement.setString(3, host);
 		preparedStatement.setInt(4, port);
 		preparedStatement.setString(5, sid);
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return (preparedStatement.executeUpdate() > 0)  ? host+":"+port+":"+sid: "";
 	}catch(Exception e){
+		try{
+			conn.close();
+		}
+		catch(Exception ex){
+			System.out.println("Error: Could not close connection" );
+		}
 		e.printStackTrace();
 		return host+":"+port+":"+sid;
 	}
   }
 	protected boolean deleteDatabaseInstance(String dbInstanceId){
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("delete from database_instance where db_id = ?");
 			preparedStatement.setString(1, dbInstanceId);
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
 			return (preparedStatement.executeUpdate() > 0);
 		}catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
 			e.printStackTrace();
 			return false;
 		}
 	}
 
 	public boolean markDbChangeAsDeployed(String dbChangeId, String lobId) {
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_request_status (db_request_id,db_group_id,status,update_date) "+
 																		"select dbr.db_request_id,dbg.db_group_id,'DONE',now() from db_requests dbr, db_schema dbs, database_groups dbg, lob_group_mapping lobgm "+ 
 																		"where dbr.schema_id = dbs.schema_id "+
@@ -294,8 +417,20 @@ public class RepositoryHandler {
 			preparedStatement.setString(1, dbChangeId);
 			preparedStatement.setString(2, lobId);
 			System.out.println(preparedStatement.toString());
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
 			return (preparedStatement.executeUpdate() > 0) ? true : false;
 		}catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
 			e.printStackTrace();
 			return false;
 		}
@@ -304,8 +439,9 @@ public class RepositoryHandler {
 	public ArrayList<String> getDatabaseSchemaIds() {
 		ResultSet rs = null;
 		ArrayList<String> databaseSchemas = new ArrayList<String>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select schema_id from db_schema");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -314,33 +450,65 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return databaseSchemas;
 	}
 
 	public int addDatabaseChange(String dbChangeId, String schemaId,String dbChangeText) {
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_requests (db_request_id,schema_id,code) values (?,?,?)");
 			preparedStatement.setString(1, dbChangeId);
 			preparedStatement.setString(2, schemaId);
 			preparedStatement.setString(3, dbChangeText);
 			preparedStatement.executeUpdate();
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
 			return 0;
 		}
 		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
 			return 1;
 		}
 	}
 	
 	public int deleteDatabaseChange(String dbChangeId) {
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("delete from db_requests where db_request_id=?");
 			preparedStatement.setString(1, dbChangeId);
 			preparedStatement.executeUpdate();
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
 			return 0;
 		}
 		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
 			return 1;
 		}
 	}
@@ -348,8 +516,9 @@ public class RepositoryHandler {
 	public ArrayList<String> getDatabaseTypeIds() {
 		ResultSet rs = null;
 		ArrayList<String> databaseTypesIds = new ArrayList<String>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_type_id from database_type");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
@@ -358,6 +527,12 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return databaseTypesIds;
 	}
 
@@ -365,8 +540,9 @@ public class RepositoryHandler {
 		ResultSet rsGroups = null;
 		ResultSet rsLobs = null;
 		ArrayList<HashMap<String,String>> databaseGroups = new ArrayList<HashMap<String,String>>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_group_id, db_type_id from database_groups");
 			rsGroups = preparedStatement.executeQuery();
 			while (rsGroups.next()){
@@ -389,48 +565,93 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return databaseGroups;
 	}
 	
 	public int addDatabaseGroup(String dbGroupId, String dbTypeId) {
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into database_groups (db_group_id,db_type_id) values (?,?)");
 			preparedStatement.setString(1, dbGroupId);
 			preparedStatement.setString(2, dbTypeId);
 			preparedStatement.executeUpdate();
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
 			return 0;
 		}
 		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
 			e.printStackTrace();
 			return 1;
 		}
 	}
 
 	public int deleteDatabaseGroup(String dbGroupId) {
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("delete from database_groups where db_group_id=?");
 			preparedStatement.setString(1, dbGroupId);
 			preparedStatement.executeUpdate();
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
 			return 0;
 		}
 		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
 			e.printStackTrace();
 			return 1;
 		}
 	}
 
 	public int addDatabaseGroupLobMapping(String dbGroupId, String lobId) {
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into lob_group_mapping (lob_id,db_group_id) values (?,?)");
 			preparedStatement.setString(1, lobId);
 			preparedStatement.setString(2, dbGroupId);
 			preparedStatement.executeUpdate();
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
 			return 0;
 		}
 		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
 			e.printStackTrace();
 			return 1;
 		}
@@ -439,8 +660,9 @@ public class RepositoryHandler {
 	public ArrayList<HashMap<String, String>> getDatabaseChangeLobsStatus(int offset, int bulkSize, AtomicInteger totalRowNumber) {
 		ResultSet rs = null;
 		ArrayList<HashMap<String,String>> databaseChangeLobsStatus = new ArrayList<HashMap<String,String>>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_request_id, code from db_requests limit ?,?");
 			preparedStatement.setInt(1, offset);
 			preparedStatement.setInt(2, bulkSize);
@@ -468,14 +690,21 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return databaseChangeLobsStatus;
 	}
 
 	public ArrayList<DBSchema> getDatabaseSchemas(int offset, int bulkSize, AtomicInteger totalRowNumber) {
 		ResultSet rs = null;
 		ArrayList<DBSchema> databaseSchemas = new ArrayList<DBSchema>();
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS schema_id, schema_name, db_type_id from db_schema limit ?,?");
 			preparedStatement.setInt(1, offset);
 			preparedStatement.setInt(2, bulkSize);
@@ -502,50 +731,95 @@ public class RepositoryHandler {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
 		return databaseSchemas;
 	}
 
 	public int addDatabaseSchema(String schemaId, String schemaName,
 			String dbTypeId) {
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_schema (schema_id,schema_name,db_type_id) values (?,?,?)");
 			preparedStatement.setString(1, schemaId);
 			preparedStatement.setString(2, schemaName);
 			preparedStatement.setString(3, dbTypeId);
 			preparedStatement.executeUpdate();
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
 			return 0;
 		}
 		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
 			e.printStackTrace();
 			return 1;
 		}
 	}
 
 	public int addDeployableDBInstance(String schemaId, String dbId) {
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into deployable_instance_schema (db_id,schema_id) values (?,?)");
 			preparedStatement.setString(1, dbId);
 			preparedStatement.setString(2, schemaId);
 			preparedStatement.executeUpdate();
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
 			return 0;
 		}
 		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
 			e.printStackTrace();
 			return 1;
 		}
 	}
 
 	public int deleteDatabaseSchema(String dbSchemaId) {
+		Connection conn=null;
 		try{
-			Connection conn = datasource.getConnection();
+			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("delete from db_schema where schema_id=?");
 			preparedStatement.setString(1, dbSchemaId);
 			preparedStatement.executeUpdate();
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
 			return 0;
 		}
 		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
 			e.printStackTrace();
 			return 1;
 		}

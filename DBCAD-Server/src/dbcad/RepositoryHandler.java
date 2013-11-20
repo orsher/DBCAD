@@ -416,14 +416,14 @@ public class RepositoryHandler {
 																		"and dbr.db_request_id=? and lobgm.lob_id=?");
 			preparedStatement.setString(1, dbChangeId);
 			preparedStatement.setString(2, lobId);
-			System.out.println(preparedStatement.toString());
+			int result = preparedStatement.executeUpdate();
 			try{
 				conn.close();
 			}
 			catch(Exception e){
 				System.out.println("Error: Could not close connection" );
 			}
-			return (preparedStatement.executeUpdate() > 0) ? true : false;
+			return (result > 0) ? true : false;
 		}catch(Exception e){
 			try{
 				conn.close();

@@ -9,18 +9,21 @@
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
 	        function doAjaxPost() {
-		        $.ajax({
-			        type: "POST",
-			        url: "rest/deploy/"+$('#lob_select :selected').val(),
-			        data: "db_changes=["+checkedChangeIds+ "]&_method=PUT",
-			        success: function(response){
-				        // we have the response
-				        $('#info').html(response);
-			        },
-			        error: function(e){
-			        	$('#info').html("error");
-			        	alert('Error: ' + e.responseText);
-			        }
+		        $('#lob_select :selected').each(function(){
+		        	$('#wait_text').html("Deploying database changes...");
+			        $.ajax({
+				        type: "POST",
+				        url: "rest/deploy/"+$(this).val(),
+				        data: "db_changes=["+checkedChangeIds+ "]&_method=PUT",
+				        success: function(response){
+					        // we have the response
+					        $('#info').html(response);
+				        },				       
+				        error: function(e){
+				        	$('#info').html("error");
+				        	alert('Error: ' + e.responseText);
+				        }
+			        });
 		        });
 	        }
 	        function getPageNumber(i) {
@@ -42,6 +45,14 @@
 	        {
 	        	$('#deploy-link').addClass("current");
 	        	addCheckBoxListener();
+		        $(document).on({
+		            ajaxStart: function() { 
+		                $('body').addClass("loading"); 
+		            },
+		            ajaxStop: function() { 
+		                $('body').removeClass("loading"); 
+		            }    
+		        });
 	        }
 	        
 	        var checkedChangeIds = [];
@@ -70,7 +81,7 @@
 </head>
 <body onload="load()">
 <%@ include file="BodyHeader.jsp" %>
-		<form:select path="options" id="lob_select">
+		<form:select multiple="true" path="options" id="lob_select">
 		    <form:options items="${options.lobs}" />
 		</form:select>
 		<br/>

@@ -97,6 +97,12 @@ public class DBCADController {
 			dbChangeId = dbChanges.getString(i);
 			repHandler.markDbChangeAsDeployed(dbChangeId, lobId);
 		}
+		try {
+			Thread.sleep(1000);
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		return "JOB Was sent";
 	}
 

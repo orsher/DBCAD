@@ -43,7 +43,7 @@ public class DBCADController {
 		instanceTableValues = repHandler.getDatabaseInstances();
 		groupTableValues = repHandler.getDatabaseGroups();
 		AtomicInteger schemasTableTotalNumberOfRows = new AtomicInteger();
-		schemaTableValues = repHandler.getDatabaseSchemas(0,TABLE_MAX_ROWS,schemasTableTotalNumberOfRows);
+		schemaTableValues = repHandler.getDatabaseSchemas(null,0,TABLE_MAX_ROWS,schemasTableTotalNumberOfRows);
 		mav.addObject("options", options);
 		mav.addObject("type_table_values", typeTableValues);
 		mav.addObject("instance_table_values", instanceTableValues);
@@ -59,7 +59,7 @@ public class DBCADController {
 		HashMap<String, ArrayList<String>> options;
 		ArrayList<HashMap<String, String>> dbChangesTableValues;
 		AtomicInteger totalNumberOfRows = new AtomicInteger();
-		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus(0, TABLE_MAX_ROWS,totalNumberOfRows);
+		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus(null,0, TABLE_MAX_ROWS,totalNumberOfRows);
 		options = new HashMap<String, ArrayList<String>>();
 		options.put("lobs", repHandler.getLobs());
 		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
@@ -67,11 +67,11 @@ public class DBCADController {
 	}
 	
 	@RequestMapping(value = "/getDbChangesTablePage", method = RequestMethod.POST)
-	public ModelAndView getDBChangesTablePage(@RequestParam(value = "page") int page) {
+	public ModelAndView getDBChangesTablePage(@RequestParam(value = "page") int page, @RequestParam(value = "searchFilter") JSONObject searchFilterJSON) {
 		HashMap<String, ArrayList<String>> options;
 		ArrayList<HashMap<String, String>> dbChangesTableValues;
 		AtomicInteger totalNumberOfRows = new AtomicInteger();
-		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus((page-1)*TABLE_MAX_ROWS, TABLE_MAX_ROWS,totalNumberOfRows);
+		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus(searchFilterJSON.isNull("generalFilter") ? null : searchFilterJSON.getString("generalFilter"),(page-1)*TABLE_MAX_ROWS, TABLE_MAX_ROWS,totalNumberOfRows);
 		options = new HashMap<String, ArrayList<String>>();
 		options.put("lobs", repHandler.getLobs());
 		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
@@ -79,11 +79,11 @@ public class DBCADController {
 	}
 	
 	@RequestMapping(value = "/getDbSchemasTablePage", method = RequestMethod.POST)
-	public ModelAndView getDBSchemasTablePage(@RequestParam(value = "page") int page) {
+	public ModelAndView getDBSchemasTablePage(@RequestParam(value = "page") int page,@RequestParam(value = "searchFilter") JSONObject searchFilterJSON) {
 		HashMap<String, ArrayList<String>> options;
 		ArrayList<DBSchema> dbSchemasTableValues;
 		AtomicInteger totalNumberOfRows = new AtomicInteger();
-		dbSchemasTableValues= repHandler.getDatabaseSchemas((page-1)*TABLE_MAX_ROWS, TABLE_MAX_ROWS,totalNumberOfRows);
+		dbSchemasTableValues= repHandler.getDatabaseSchemas(searchFilterJSON.getString("generalFilter"),(page-1)*TABLE_MAX_ROWS, TABLE_MAX_ROWS,totalNumberOfRows);
 		options = new HashMap<String, ArrayList<String>>();
 		return new ModelAndView("ManageDatabaseSchemaTable", "options", options).addObject("schema_table_values",dbSchemasTableValues).addObject("schemasNumOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("schemasCurrentPage",page);
 	}

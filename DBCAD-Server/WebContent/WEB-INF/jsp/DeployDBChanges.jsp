@@ -9,6 +9,7 @@
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
         	var currentPage=1;
+        	var searchFilter={};
 	        function doAjaxPost() {
 		        $('#lob_select :selected').each(function(){
 		        	$('#wait_text').html("Deploying database changes...");
@@ -32,7 +33,7 @@
 		        $.ajax({
 			        type: "POST",
 			        url: "getDbChangesTablePage",
-			        data: "page="+i,
+			        data: "page="+i+"&searchFilter="+JSON.stringify(searchFilter),
 			        success: function(response){
 			        	$('#db-changes-table').replaceWith(response);
 			        	addCheckBoxListener();
@@ -43,6 +44,10 @@
 			        	alert('Error: ' + e.responseText);
 			        }
 		        });
+	        }
+	        function filterChanges() {
+	        	searchFilter.generalFilter = $('#generalFilterText').val();
+	        	getPageNumber(1);
 	        }
 	        function load()
 	        {
@@ -89,6 +94,12 @@
 		</form:select>
 		<br/>
  <input type="button" value="Deploy" onclick="doAjaxPost()">
+ <br/>
+ <div search_div>
+	Filter Database Changes:
+	<input type="text" id="generalFilterText">
+	<input type="button" value="Search" onclick="filterChanges()">
+ </div>
  <div id="checked-db-changes-div"></div>
      
 		<%@ include file="DeployDBChangesTable.jsp" %>

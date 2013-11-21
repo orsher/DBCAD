@@ -661,15 +661,27 @@ public class RepositoryHandler {
 		}
 	}
 	
-	public ArrayList<HashMap<String, String>> getDatabaseChangeLobsStatus(int offset, int bulkSize, AtomicInteger totalRowNumber) {
+	public ArrayList<HashMap<String, String>> getDatabaseChangeLobsStatus(String generalFilter, int offset, int bulkSize, AtomicInteger totalRowNumber) {
 		ResultSet rs = null;
 		ArrayList<HashMap<String,String>> databaseChangeLobsStatus = new ArrayList<HashMap<String,String>>();
 		Connection conn=null;
 		try{
+			System.out.println(generalFilter+" "+offset+" "+bulkSize);
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_request_id, schema_id, code from db_requests limit ?,?");
-			preparedStatement.setInt(1, offset);
-			preparedStatement.setInt(2, bulkSize);
+			PreparedStatement preparedStatement;
+			if (generalFilter == null){
+				preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_request_id, schema_id, code from db_requests limit ?,?");
+				preparedStatement.setInt(1, offset);
+				preparedStatement.setInt(2, bulkSize);
+			}
+			else{
+				preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_request_id, schema_id, code from db_requests where upper(db_request_id) like upper(?) or upper(schema_id) like upper(?) or upper(code) like upper(?) limit ?,?");
+				preparedStatement.setString(1, '%'+generalFilter+'%');
+				preparedStatement.setString(2, '%'+generalFilter+'%');
+				preparedStatement.setString(3, '%'+generalFilter+'%');
+				preparedStatement.setInt(4, offset);
+				preparedStatement.setInt(5, bulkSize);
+			}
 			rs = preparedStatement.executeQuery();
 			Statement stmt= conn.createStatement();
 			ResultSet numRowsRs = stmt.executeQuery("SELECT FOUND_ROWS()");
@@ -704,7 +716,7 @@ public class RepositoryHandler {
 		return databaseChangeLobsStatus;
 	}
 
-	public ArrayList<DBSchema> getDatabaseSchemas(int offset, int bulkSize, AtomicInteger totalRowNumber) {
+	public ArrayList<DBSchema> getDatabaseSchemas(String generalFilter, int offset, int bulkSize, AtomicInteger totalRowNumber) {
 		ResultSet rs = null;
 		ArrayList<DBSchema> databaseSchemas = new ArrayList<DBSchema>();
 		Connection conn=null;

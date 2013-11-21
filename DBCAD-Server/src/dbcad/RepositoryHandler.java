@@ -255,13 +255,14 @@ public class RepositoryHandler {
 			preparedStatement.setString(1, dbVendor+" "+dbRole);
 			preparedStatement.setString(2, dbRole);
 			preparedStatement.setString(3, dbVendor);
+			int result = preparedStatement.executeUpdate();
 			try{
 				conn.close();
 			}
 			catch(Exception e){
 				System.out.println("Error: Could not close connection" );
 			}
-			return (preparedStatement.executeUpdate() > 0) ? dbVendor+" "+dbRole : "";
+			return (result > 0) ? dbVendor+" "+dbRole : "";
 		}catch(Exception e){
 			try{
 				conn.close();
@@ -280,13 +281,14 @@ public class RepositoryHandler {
 			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("delete from database_type where db_type_id = ?");
 			preparedStatement.setString(1, dbTypeId);
+			int result = preparedStatement.executeUpdate();
 			try{
 				conn.close();
 			}
 			catch(Exception e){
 				System.out.println("Error: Could not close connection" );
 			}
-			return (preparedStatement.executeUpdate() > 0);
+			return (result > 0);
 		}catch(Exception e){
 			try{
 				conn.close();
@@ -361,13 +363,14 @@ public class RepositoryHandler {
 		preparedStatement.setString(3, host);
 		preparedStatement.setInt(4, port);
 		preparedStatement.setString(5, sid);
+		int result = preparedStatement.executeUpdate();
 		try{
 			conn.close();
 		}
 		catch(Exception e){
 			System.out.println("Error: Could not close connection" );
 		}
-		return (preparedStatement.executeUpdate() > 0)  ? host+":"+port+":"+sid: "";
+		return (result > 0)  ? host+":"+port+":"+sid: "";
 	}catch(Exception e){
 		try{
 			conn.close();
@@ -385,13 +388,14 @@ public class RepositoryHandler {
 			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("delete from database_instance where db_id = ?");
 			preparedStatement.setString(1, dbInstanceId);
+			int result = preparedStatement.executeUpdate();
 			try{
 				conn.close();
 			}
 			catch(Exception e){
 				System.out.println("Error: Could not close connection" );
 			}
-			return (preparedStatement.executeUpdate() > 0);
+			return (result > 0);
 		}catch(Exception e){
 			try{
 				conn.close();

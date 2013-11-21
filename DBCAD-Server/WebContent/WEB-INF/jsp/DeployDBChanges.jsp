@@ -8,6 +8,7 @@
     <link href="css/dbcad.css" rel="stylesheet" type="text/css" />
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
+        	var currentPage=1;
 	        function doAjaxPost() {
 		        $('#lob_select :selected').each(function(){
 		        	$('#wait_text').html("Deploying database changes...");
@@ -25,6 +26,7 @@
 				        }
 			        });
 		        });
+		        getPageNumber(currentPage);
 	        }
 	        function getPageNumber(i) {
 		        $.ajax({
@@ -35,6 +37,7 @@
 			        	$('#db-changes-table').replaceWith(response);
 			        	addCheckBoxListener();
 			        	setCheckBoxesStatus();
+			        	currentPage=i;
 			        },
 			        error: function(e){
 			        	alert('Error: ' + e.responseText);

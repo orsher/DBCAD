@@ -6,7 +6,7 @@
         <ul>
             <li><a id="manage-databases-link" href="manage-databases">Manange Databases</a></li>
             <li><a id="manage-db-changes-link" href="manage-db-changes">Manage DB Changes</a></li>
-            <li><a id="deploy-link" href="deploy">Deploy DB Changes</a></li>
+<!--             <li><a id="deploy-link" href="deploy">Deploy DB Changes</a></li> -->
         </ul>    	
         <div id="search_box">
             <form action="#" method="post">

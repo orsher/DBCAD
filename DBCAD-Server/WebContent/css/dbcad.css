@@ -432,3 +432,74 @@ body.loading .modal_text {
     top: 50%;
     width: 100%;
 }
+
+.ontopwindows {
+    display:    none;
+    position:   fixed;
+    z-index:    1;
+    top:        0;
+    left:       0;
+    height:     100%;
+    width:      100%;
+/*     background: rgba( 255, 255, 255, .8 ) */
+/*                 50% 50%  */
+/*                 no-repeat; */
+	background-color: #8F8F8F;
+	background-repeat: repeat-x;
+	background-position: top
+}
+
+.ontopwindows.display{
+	display: block;
+    text-align: left;
+    color: #FFFFFF;
+	top: 33%;
+	width: 33%;
+	left: 33%;
+	height: 33%;
+	padding: 1%;
+    background:rgba(0,0,0,.3);
+    -webkit-border-radius:8px;
+    -moz-border-radius:8px;
+    border-radius:8px;
+}
+
+.ontopwindow_heading {
+	position: relative;
+    width:100%;
+    height:18%;
+    background-image: -webkit-linear-gradient(top, rgb(249, 249, 249), rgb(233, 233, 233));
+    background-image: -moz-linear-gradient(top, rgb(249, 249, 249), rgb(233, 233, 233));
+    background-image: -o-linear-gradient(top, rgb(249, 249, 249), rgb(233, 233, 233));
+    background-image: -ms-linear-gradient(top, rgb(249, 249, 249), rgb(233, 233, 233));
+    background-image: linear-gradient(top, rgb(249, 249, 249), rgb(233, 233, 233));
+    filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,StartColorStr='#f9f9f9', EndColorStr='#e9e9e9');
+    border-bottom:1px solid #bababa;
+    -webkit-box-shadow:
+        inset 0px -1px 0px #fff,
+        0px 1px 3px rgba(0,0,0,.08);
+    -moz-box-shadow:
+        inset 0px -1px 0px #fff,
+        0px 1px 3px rgba(0,0,0,.08);
+    box-shadow:
+        inset 0px -1px 0px #fff,
+        0px 1px 3px rgba(0,0,0,.08);
+    -webkit-border-radius:4px 4px 0px 0px;
+    -moz-border-radius:4px 4px 0px 0px;
+    border-radius:4px 4px 0px 0px;
+    font-size:14px;
+    font-weight:bold;
+    text-align:center;
+    line-height:44px;
+    color:#444444;
+    text-shadow:0px 1px 0px #fff;
+    margin-bottom: 2%;
+}
+
+.closewindowbutton {
+	position: absolute;
+	right: -2%;
+	top: -4%;
+	width: 5%;
+	height: 12%;
+}

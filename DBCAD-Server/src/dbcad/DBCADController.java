@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import dbcad.services.api.DBService;
+
 @Controller
 public class DBCADController {
 	private static RepositoryHandler repHandler;
@@ -24,7 +26,12 @@ public class DBCADController {
 	static {
 		repHandler = new RepositoryHandler();
 	}
-
+	
+	@RequestMapping(value = "/", method = RequestMethod.GET)
+	public ModelAndView rootPage() {
+		return manageDatabases();
+	}
+	
 	@RequestMapping(value = "/manage-databases", method = RequestMethod.GET)
 	public ModelAndView manageDatabases() {
 		HashMap<String, ArrayList<String>> options;
@@ -104,6 +111,11 @@ public class DBCADController {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+		DBService dbService = DBService.getDBService("Oracle");
+		HashMap<String,String> parameters = new HashMap<String,String>();
+		parameters.put("sqlPlusPath", "d:\\oracle\\product\\11.2.0\\client_1\\bin\\sqlplus.exe");
+		dbService.initializeDBService("dbqa", 1524, "dvlp2",parameters);
+		dbService.runScript("Select * from v$database;");
 		return "JOB Was sent";
 	}
 

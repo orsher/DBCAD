@@ -73,7 +73,7 @@
 	        }
 	        function load()
 	        {
-	        	$('#deploy-link').addClass("current");
+	        	$('#manage-db-changes-link').addClass("current");
 	        	addCheckBoxListener();
 		        $(document).on({
 		            ajaxStart: function() { 
@@ -182,7 +182,7 @@
 		<div class="ontopwindow_heading">Create Database Change</div>
 		<input type="text" placeholder="DB Change ID..." class="input_field" id="db_change_id_text_field" name="db_change_id_text_field"/>
 		<form:select path="options" id="schema_select">
-			<form:option value="" label="Select Filter" disabled="true" selected="true"/>
+			<form:option value="" label="Select DB Schema" disabled="true" selected="true"/>
 		    <form:options items="${options.db_schemas}" />
 		</form:select>
 		<br/>

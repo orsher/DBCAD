@@ -841,5 +841,99 @@ public class RepositoryHandler {
 			return 1;
 		}
 	}
+	
+	public int addDBPluginConfig(String pluginDBType,ArrayList<String> globalParameters){
+		Connection conn=null;
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_plugin_global_parameters (plugin_name,parameter_name) values (?,?) on duplicate key update plugin_name=plugin_name");
+			preparedStatement.setString(1, pluginDBType);
+			for (String parameter : globalParameters){
+				preparedStatement.setString(2, parameter);
+				preparedStatement.executeUpdate();
+			}
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
+			return 0;
+		}
+		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
+			e.printStackTrace();
+			return 1;
+		}
+	}
 
+	public int saveDBPluginConfig(String pluginDBType,HashMap<String,String> globalParameters){
+		Connection conn=null;
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_plugin_global_parameters (plugin_name,parameter_name,parameter_value) values (?,?,?) on duplicate key update parameter_value = ?");
+			preparedStatement.setString(1, pluginDBType);
+			for (String key : globalParameters.keySet()){
+				preparedStatement.setString(2, key);
+				preparedStatement.setString(3, globalParameters.get(key));
+				preparedStatement.setString(4, globalParameters.get(key));
+				preparedStatement.executeUpdate();
+			}
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
+			return 0;
+		}
+		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
+			e.printStackTrace();
+			return 1;
+		}
+	}
+	
+	public HashMap<String,String> getDBPluginConfig(String pluginDBType){
+		Connection conn=null;
+		HashMap<String,String> dbPluginParamValues = new HashMap<String,String>();
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("select parameter_name, parameter_value from db_plugin_global_parameters where plugin_name=?");
+			preparedStatement.setString(1, pluginDBType);
+			ResultSet paramsRS = preparedStatement.executeQuery();
+			while (paramsRS.next()){
+				dbPluginParamValues.put(paramsRS.getString("parameter_name"), paramsRS.getString("parameter_value"));
+			}
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
+			return dbPluginParamValues;
+		}
+		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
+			e.printStackTrace();
+			return null;
+		}
+	}
 }
+
+

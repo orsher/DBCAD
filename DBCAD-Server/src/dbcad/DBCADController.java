@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.PostConstruct;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Controller;
@@ -25,6 +27,17 @@ public class DBCADController {
 
 	static {
 		repHandler = new RepositoryHandler();
+	}
+	
+	@PostConstruct
+	public void initializeDBCAD(){
+		ArrayList<String> parameters = new ArrayList<String>();
+		for (DBService dbService : DBService.getDBServices()){
+			for (String globalParameterName : dbService.getGlobalParameterNames()){
+				parameters.add(globalParameterName);
+			}
+			repHandler.addDBPluginConfig(dbService.getDBType(), parameters);
+		}
 	}
 	
 	@RequestMapping(value = "/", method = RequestMethod.GET)
@@ -58,6 +71,7 @@ public class DBCADController {
 		mav.addObject("schema_table_values", schemaTableValues);
 		mav.addObject("schemasNumOfPages",Math.ceil(1.0*schemasTableTotalNumberOfRows.intValue()/TABLE_MAX_ROWS));
 		mav.addObject("schemasCurrentPage",1);
+		mav.addObject("dbPluginsConfig",getDBPluginsConfig());
 		return mav;
 	}
 
@@ -324,5 +338,14 @@ public class DBCADController {
 			returnText = "Error: Database Schema was not deleted";
 		}
 		return returnText;
+	}
+	
+	
+	public ArrayList<DatabasePluginConfig> getDBPluginsConfig(){
+		ArrayList<DatabasePluginConfig> pluginsConfig = new ArrayList<DatabasePluginConfig>(); 
+		for (DBService dbService : DBService.getDBServices()){
+			pluginsConfig.add(new DatabasePluginConfig(dbService.getDBType(),repHandler.getDBPluginConfig(dbService.getDBType())));
+		}
+		return pluginsConfig;
 	}
 }

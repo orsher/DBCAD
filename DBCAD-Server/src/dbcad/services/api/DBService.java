@@ -6,7 +6,7 @@ import java.util.ServiceLoader;
 
 public abstract class DBService {
 	
-	 public static DBService getDBService(String dbType) {
+	 	public static DBService getDBService(String dbType) {
 	        ServiceLoader<DBService> dbServices = ServiceLoader.load(DBService.class);
 	        for (DBService dbService : dbServices) {
 	        	if (dbService.getDBType().equals(dbType)){	        		
@@ -14,6 +14,11 @@ public abstract class DBService {
 	        	}
 	        }
 	        throw new Error ("No DB Service of type "+dbType+" registered");
+	    }
+	 	
+	 	public static ServiceLoader<DBService> getDBServices() {
+	        ServiceLoader<DBService> dbServices = ServiceLoader.load(DBService.class);
+	        return dbServices; 
 	    }
 
 	 	public abstract ArrayList<String> getGlobalParameterNames();

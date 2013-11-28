@@ -219,12 +219,24 @@
 
             
 		<ul class="tabs" data-persist="true">
+			<li class=""><a href="#database-plugins-div"><span>Database Plugins</span></a></li>
         	<li class="selected"><a href="#database-types-div"><span>Database Types</span></a></li>
-        	<li class=""><a href="#database-instances-div"><span>Database Instances</span></a></li>
         	<li class=""><a href="#database-groups-div"><span>Database Groups</span></a></li>
+        	<li class=""><a href="#database-instances-div"><span>Database Instances</span></a></li>
         	<li class=""><a href="#database-schemas-div"><span>Database Schemas</span></a></li>
     	</ul>
     	<div class="tabcontents">
+    	     <div id="database-plugins-div" style="display: none;">
+    	     	<c:forEach items="${dbPluginsConfig}" var="pluginConfig">
+    	     		<h1>${pluginConfig.dbPluginType}</h1>
+    	     		<c:forEach items="${pluginConfig.globalParameterValues}" var="parameterEntry">
+    	     			${parameterEntry.key}
+    	     			<input type="text" class="${pluginConfig.dbPluginType}_Parameter" id="${parameterEntry.key}" value="${parameterEntry.value}"/>
+    	     		</c:forEach>
+    	     		<br/>
+					<input type="button" value="Save" onclick="SaveDBPluginConfig(${pluginConfig.dbPluginType})">
+    	     	</c:forEach>
+            </div>
             <div id="database-types-div" style="display: block;">
                 
                 <input type="text" id="db_vendor" class="input_field" name="db_vendor" list="db_vendors"/>

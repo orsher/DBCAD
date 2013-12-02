@@ -7,6 +7,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.json.JSONArray;
@@ -324,21 +325,28 @@ public class RepositoryHandler {
 		return databaseGroups;
 	}
 	
-	protected ArrayList<HashMap<String,String>> getDatabaseInstances(){
+	protected ArrayList<DBInstance> getDatabaseInstances(){
 		ResultSet rs = null;
-		ArrayList<HashMap<String,String>> databaseInstances = new ArrayList<HashMap<String,String>>();
+		ArrayList<DBInstance> databaseInstances = new ArrayList<DBInstance>();
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select db_id, db_group_id,host,port,sid from database_instance");
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
-				HashMap<String,String> dbInstance = new HashMap<String,String>();
-				dbInstance.put("db_id", rs.getString("db_id"));
-				dbInstance.put("db_group_id", rs.getString("db_group_id"));
-				dbInstance.put("host", rs.getString("host"));
-				dbInstance.put("port", Integer.toString(rs.getInt("port")));
-				dbInstance.put("sid", rs.getString("sid"));
+				HashMap<String,String> pluginInstanceParameters = new HashMap<String,String>();
+				PreparedStatement innerPS = conn.prepareStatement("select parameter_name, parameter_value from db_plugin_instance_parameters where db_id=?");
+				innerPS.setString(1,rs.getString("db_id"));
+				ResultSet innerRS = innerPS.executeQuery();
+				while (innerRS.next()){
+					pluginInstanceParameters.put(innerRS.getString("parameter_name"), innerRS.getString("parameter_value"));
+				}
+				DBInstance dbInstance = new DBInstance(rs.getString("db_id"),rs.getString("db_group_id"),rs.getString("host"),rs.getInt("port"),rs.getString("sid"),pluginInstanceParameters);
+//				dbInstance.put("db_id", rs.getString("db_id"));
+//				dbInstance.put("db_group_id", rs.getString("db_group_id"));
+//				dbInstance.put("host", rs.getString("host"));
+//				dbInstance.put("port", Integer.toString(rs.getInt("port")));
+//				dbInstance.put("sid", rs.getString("sid"));
 				databaseInstances.add(dbInstance);
 			}
 		}catch(Exception e){
@@ -353,17 +361,26 @@ public class RepositoryHandler {
 		return databaseInstances;
 	}
 
-	protected String addDatabaseInstance(String db_group_id, String host,Integer port, String sid ){
+	protected String addDatabaseInstance(String db_group_id, String host,Integer port, String sid, HashMap<String, String> pluginInstanceParameters ){
 		Connection conn=null;
 	try{
 		conn = datasource.getConnection();
 		PreparedStatement preparedStatement = conn.prepareStatement("insert into database_instance (db_id,db_group_id,host,port,sid) values (?,?,?,?,?)");
-		preparedStatement.setString(1, host+":"+port+":"+sid);
+		String db_id = host+":"+port+":"+sid;
+		preparedStatement.setString(1, db_id);
 		preparedStatement.setString(2, db_group_id);
 		preparedStatement.setString(3, host);
 		preparedStatement.setInt(4, port);
 		preparedStatement.setString(5, sid);
 		int result = preparedStatement.executeUpdate();
+		preparedStatement =  conn.prepareStatement("insert into db_plugin_instance_parameters (db_id,parameter_name,parameter_value) values (?,?,?)");
+		preparedStatement.setString(1, db_id);
+	    for (String key : pluginInstanceParameters.keySet()){
+	    	String val = null;
+	    	preparedStatement.setString(2, key);
+	    	preparedStatement.setString(3, pluginInstanceParameters.get(key));
+	    	result = preparedStatement.executeUpdate();
+	    }
 		try{
 			conn.close();
 		}
@@ -547,17 +564,18 @@ public class RepositoryHandler {
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select db_group_id, db_type_id from database_groups");
+			PreparedStatement preparedStatement = conn.prepareStatement("select dg.db_group_id, dg.db_type_id,dt.db_vendor from database_groups dg, database_type dt where dg.db_type_id = dt.db_type_id");
 			rsGroups = preparedStatement.executeQuery();
 			while (rsGroups.next()){
 				HashMap<String,String> dbGroup = new HashMap<String,String>();
 				dbGroup.put("db_group_id", rsGroups.getString("db_group_id"));
 				dbGroup.put("db_type_id", rsGroups.getString("db_type_id"));
+				dbGroup.put("db_plugin_type", rsGroups.getString("db_vendor"));
 				PreparedStatement lobsPreparedStatement = conn.prepareStatement("select lob_id from lob_group_mapping where db_group_id=?");
 				lobsPreparedStatement.setString(1, rsGroups.getString("db_group_id"));
 				rsLobs = lobsPreparedStatement.executeQuery();
 				StringBuilder sb = new StringBuilder();
-				if (rsLobs.next()){
+				if (rsLobs.next()){	
 					sb.append(rsLobs.getString("lob_id"));
 				}
 				while (rsLobs.next()){

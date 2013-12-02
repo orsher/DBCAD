@@ -177,7 +177,7 @@
 		<input type="button" value="Delete" onclick="deleteDBChanges()">
 		<br/>
 	</div>
-		<div id="create_db_change_div" class="ontopwindows">
+	<div id="create_db_change_div" class="ontopwindows">
 		<img src="css/images/closex.png" class="closewindowbutton" onclick='closeCreateWindow()'>
 		<div class="ontopwindow_heading">Create Database Change</div>
 		<input type="text" placeholder="DB Change ID..." class="input_field" id="db_change_id_text_field" name="db_change_id_text_field"/>

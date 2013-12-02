@@ -2,6 +2,7 @@ package dbcad;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.PostConstruct;
@@ -49,7 +50,7 @@ public class DBCADController {
 	public ModelAndView manageDatabases() {
 		HashMap<String, ArrayList<String>> options;
 		ArrayList<HashMap<String, String>> typeTableValues;
-		ArrayList<HashMap<String, String>> instanceTableValues;
+		ArrayList<DBInstance> instanceTableValues;
 		ArrayList<HashMap<String, String>> groupTableValues;
 		ArrayList<DBSchema> schemaTableValues;
 		ModelAndView mav = new ModelAndView("ManageDatabases");
@@ -183,22 +184,15 @@ public class DBCADController {
 
 	@RequestMapping(value = "/rest/db_instance", method = RequestMethod.PUT)
 	public @ResponseBody
-	String addDBInstance(
-			@ModelAttribute(value = "db_instance") DBInstance dbInstance,
-			BindingResult result) {
+	String addDBInstance(@RequestParam(value = "dbGroupId") String dbGroupId,@RequestParam(value = "dbHost") String dbHost,
+			@RequestParam(value = "dbPort") Integer dbPort,@RequestParam(value = "dbSid") String dbSid,@RequestParam(value = "pluginInstanceParameters") JSONObject pluginInstanceParameters) {
+		DBInstance dbInstance = new DBInstance(null,dbGroupId,dbHost,dbPort,dbSid,Utils.jsonToHashMap(pluginInstanceParameters));
 		String returnText;
-		if (!result.hasErrors()) {
-			System.out.println("INSTANCE::: " + dbInstance.getDbGroupId() + " "
-					+ dbInstance.getDbHost() + " " + dbInstance.getDbSid()
-					+ " " + dbInstance.getDbPort());
-			String dbInstanceId = repHandler.addDatabaseInstance(
-					dbInstance.getDbGroupId(), dbInstance.getDbHost(),
-					dbInstance.getDbPort(), dbInstance.getDbSid());
-			if (!dbInstanceId.equals("")) {
-				returnText = dbInstanceId;
-			} else {
-				returnText = "Error: DB Instance was not added";
-			}
+		String dbInstanceId = repHandler.addDatabaseInstance(
+				dbInstance.getDbGroupId(), dbInstance.getDbHost(),
+				dbInstance.getDbPort(), dbInstance.getDbSid(), dbInstance.getPluginInstanceParameters());
+		if (!dbInstanceId.equals("")) {
+			returnText = dbInstanceId;
 		} else {
 			returnText = "Error: DB Instance was not added";
 		}
@@ -340,11 +334,34 @@ public class DBCADController {
 		return returnText;
 	}
 	
+	@RequestMapping(value = "/saveDbPluginConfig", method = RequestMethod.POST)
+	public @ResponseBody
+	String saveDbPluginConfig(@RequestParam("dbPluginType") String dbPluginType,@RequestParam("params") JSONObject dbPluginParams) {
+		HashMap<String,String> dbPluginParamsHash = new HashMap<String,String>();
+		Iterator<String> keys = dbPluginParams.keys();
+	    while(keys.hasNext()){
+	    	String key = keys.next();
+	    	String val = null;
+	        try{
+	             String value = dbPluginParams.getString(key);
+	             dbPluginParamsHash.put(key, value);
+	        }catch(Exception e){
+	            e.printStackTrace();
+	        }
+	    }
+		if (repHandler.saveDBPluginConfig(dbPluginType, dbPluginParamsHash) == 0){
+			return "DB Plugin Configurations saved.";
+		}
+		else{
+			return "Error: Could not save DB Plugin configurations";
+		}
+	}
+
 	
 	public ArrayList<DatabasePluginConfig> getDBPluginsConfig(){
 		ArrayList<DatabasePluginConfig> pluginsConfig = new ArrayList<DatabasePluginConfig>(); 
 		for (DBService dbService : DBService.getDBServices()){
-			pluginsConfig.add(new DatabasePluginConfig(dbService.getDBType(),repHandler.getDBPluginConfig(dbService.getDBType())));
+			pluginsConfig.add(new DatabasePluginConfig(dbService.getDBType(),repHandler.getDBPluginConfig(dbService.getDBType()),dbService.getInstanceParameterNames()));
 		}
 		return pluginsConfig;
 	}

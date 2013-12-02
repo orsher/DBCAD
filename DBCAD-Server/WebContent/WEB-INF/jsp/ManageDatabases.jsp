@@ -38,10 +38,15 @@
 		        var dbHost = $('#host').val();
 		        var dbPort = $('#port').val();
 		        var dbSid = $('#sid').val();
+		        var pluginInstanceParameters = {};
+		        var dbPluginType = $('#group_select :selected').attr("dbplugintype");
+		        $('.'+dbPluginType+'_InstanceParameter').each(function(){
+		        	pluginInstanceParameters[$(this).attr('id')] = $(this).val();
+		        });
 		        $.ajax({
 			        type: "POST",
 			        url: "rest/db_instance",
-			        data: "dbGroupId=" + dbGroupId + "&dbHost=" + dbHost + "&dbPort=" + dbPort + "&dbSid=" + dbSid + "&_method=PUT",
+			        data: "dbGroupId=" + dbGroupId + "&dbHost=" + dbHost + "&dbPort=" + dbPort + "&dbSid=" + dbSid + "&pluginInstanceParameters="+JSON.stringify(pluginInstanceParameters)+"&_method=PUT",
 			        success: function(response){
 				        // we have the response
 				        $('#info').html(response);
@@ -206,11 +211,32 @@
 	        function addLobToList(){
 	        	$('#new_group_lob_select').append('<option value="'+$('#new_lob_id_input').val()+'">'+$('#new_lob_id_input').val()+'</option>');
 	        }
+	        function SaveDBPluginConfig(dbPluginType){
+	        	var params = {};
+		        $("."+dbPluginType+"_Parameter").each(function(){
+		        	params[this.id] = this.value;
+		        });
+		        $.ajax({
+			        type: "POST",
+			        url: "saveDbPluginConfig",
+			        data: "dbPluginType="+dbPluginType+"&params="+JSON.stringify(params),
+			        success: function(response){
+			        },
+			        error: function(e){
+			        }
+		        });
+	        }
 	        
 	        function load()
 	        {
 	        	$('#manage-databases-link').addClass("current");
 	        }
+        	function openCreateInstanceWindow(){
+       		 	$('#create_db_instance_div').addClass("Display");
+       		}
+        	function closeCreateInstanceWindow(){
+       		 	$('#create_db_instance_div').removeClass("Display");
+       		}
         </script>
 </head>
 <body onload="load()">
@@ -234,7 +260,7 @@
     	     			<input type="text" class="${pluginConfig.dbPluginType}_Parameter" id="${parameterEntry.key}" value="${parameterEntry.value}"/>
     	     		</c:forEach>
     	     		<br/>
-					<input type="button" value="Save" onclick="SaveDBPluginConfig(${pluginConfig.dbPluginType})">
+					<input type="button" value="Save" onclick="SaveDBPluginConfig('${pluginConfig.dbPluginType}')">
     	     	</c:forEach>
             </div>
             <div id="database-types-div" style="display: block;">
@@ -276,17 +302,31 @@
                 
             </div>
             <div id="database-instances-div" style="display: none;">
-	           	<form:select path="options" id="group_select">
-			    	<form:options items="${options.db_groups}" />
-				</form:select>
-				<input type="text" id="host" name="host" class="input_field"/>
-				<input type="text" id="port" name="port" class="input_field"/>
-				<input type="text" id="sid" name="sid" class="input_field"/>
-				<div id="info" style="color: green;">info...</div>
+	           <div id="create_db_instance_div" class="ontopwindows">
+	           		<img src="css/images/closex.png" class="closewindowbutton" onclick='closeCreateInstanceWindow()'>
+	           		<div class="ontopwindow_heading">Create Database Instance</div>
+		           <select path="options" id="group_select">
+		           		<c:forEach items="${group_table_values}" var="db_group">
+				    		<option id="${db_group.db_group_id}" value="${db_group.db_group_id}" dbPluginType="${db_group.db_plugin_type}">${db_group.db_group_id}</option>
+				    	</c:forEach>
+					</select>
+					<input type="text" id="host" name="host" placeholder="host..." class="input_field"/>
+					<input type="text" id="port" name="port" placeholder="port..."class="input_field"/>
+					<input type="text" id="sid" name="sid" placeholder="sid..." class="input_field"/>
 					<br/>
- 
+					
+	    	     	<c:forEach items="${dbPluginsConfig}" var="pluginConfig">
+	    	     		<div id="${pluginConfig.dbPluginType}_InstanceParameters">
+		    	     		<c:forEach items="${pluginConfig.instanceParameterNames}" var="instanceParameterName">
+		    	     			${instanceParameterName}
+		    	     			<input type="text" class="${pluginConfig.dbPluginType}_InstanceParameter" id="${instanceParameterName}"/>
+		    	     		</c:forEach>
+						</div>
+    	     		</c:forEach>
+    	     	
 					<input type="button" value="Add" onclick="addDbInstance()">
-     
+	           </div>
+	           <input type="button" value="Add" onclick="openCreateInstanceWindow()">
 				<table id="types-table" class="table">
 	                <thead>
 	                    <tr>
@@ -294,24 +334,32 @@
 	                        <th>Database Host</th>
 	                        <th>Database Port</th>
 	                        <th>Database Sid</th>
+	                        <th>Plugin Instance Parameters</th>
 	                        <th></th>
 	                    </tr>
 	                </thead>
 	                <tbody id="types-table-body">
 	                    <c:forEach items="${instance_table_values}" var="tableRow">
 	                        <tr class="table_row">    
-	                            <td>${tableRow.db_group_id}</td>
-	                            <td>${tableRow.host}</td>
-	                            <td>${tableRow.port}</td>
-	                            <td>${tableRow.sid}</td>
-	                            <td><input type="button" value="Delete" onclick="doDeleteDBInstance('${tableRow.db_id}',this)"></td>
+	                            <td>${tableRow.dbGroupId}</td>
+	                            <td>${tableRow.dbHost}</td>
+	                            <td>${tableRow.dbPort}</td>
+	                            <td>${tableRow.dbSid}</td>
+	                            <td>
+		                            <ul>
+			                            <c:forEach items="${tableRow.pluginInstanceParameters}" var="parameterEntry">
+					    	     			<li>${parameterEntry.key} = ${parameterEntry.value}</li>
+					    	     		</c:forEach>
+		                            </ul>
+	                            </td>
+	                            <td><input type="button" value="Delete" onclick="doDeleteDBInstance('${tableRow.dbId}',this)"></td>
 	                        </tr>
 	                    </c:forEach>
 	                </tbody>
 	            </table>
             </div>
             <div id="database-groups-div" style="display: none;">
-				<input type="text" id="new_group_id_input" name="new_group_id_input" class="input_field"/>
+           		<input type="text" id="new_group_id_input" name="new_group_id_input" class="input_field"/>
 				<form:select path="options" id="new_group_type_select">
 			    	<form:options items="${options.db_types}" />
 				</form:select>

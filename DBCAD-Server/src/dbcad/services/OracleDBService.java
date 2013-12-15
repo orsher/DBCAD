@@ -30,10 +30,10 @@ public class OracleDBService extends DBService {
 		this.hostname = hostname;
 		this.port =port;
 		this.dbSID = dbSID;
-		this.sqlPlusPath = parameters.get("sqlPlusPath");
+		this.sqlPlusPath = parameters.get(""
+				+ "");
 		return true;
 	}
-	
 
 	@Override
 	public boolean runScript(String script) {

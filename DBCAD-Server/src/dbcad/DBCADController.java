@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.servlet.ModelAndView;
 
+import com.google.gson.Gson;
+
 import dbcad.services.api.DBService;
 
 @Controller
@@ -48,6 +50,7 @@ public class DBCADController {
 	
 	@RequestMapping(value = "/manage-databases", method = RequestMethod.GET)
 	public ModelAndView manageDatabases() {
+		Gson gson = new Gson();
 		HashMap<String, ArrayList<String>> options;
 		ArrayList<HashMap<String, String>> typeTableValues;
 		ArrayList<DBInstance> instanceTableValues;
@@ -61,13 +64,17 @@ public class DBCADController {
 		options.put("db_types", repHandler.getDatabaseTypeIds());
 		options.put("lobs", repHandler.getLobs());
 		typeTableValues = repHandler.getDatabaseTypes();
-		instanceTableValues = repHandler.getDatabaseInstances();
+		AtomicInteger instancesTableTotalNumberOfRows = new AtomicInteger();
+		instanceTableValues = repHandler.getDatabaseInstances(null,0,TABLE_MAX_ROWS,instancesTableTotalNumberOfRows);
 		groupTableValues = repHandler.getDatabaseGroups();
 		AtomicInteger schemasTableTotalNumberOfRows = new AtomicInteger();
 		schemaTableValues = repHandler.getDatabaseSchemas(null,0,TABLE_MAX_ROWS,schemasTableTotalNumberOfRows);
 		mav.addObject("options", options);
 		mav.addObject("type_table_values", typeTableValues);
 		mav.addObject("instance_table_values", instanceTableValues);
+		mav.addObject("instance_table_values_json", gson.toJson(instanceTableValues));
+		mav.addObject("instancesNumOfPages",Math.ceil(1.0*instancesTableTotalNumberOfRows.intValue()/TABLE_MAX_ROWS));
+		mav.addObject("instancesCurrentPage",1);
 		mav.addObject("group_table_values", groupTableValues);
 		mav.addObject("schema_table_values", schemaTableValues);
 		mav.addObject("schemasNumOfPages",Math.ceil(1.0*schemasTableTotalNumberOfRows.intValue()/TABLE_MAX_ROWS));
@@ -76,19 +83,19 @@ public class DBCADController {
 		return mav;
 	}
 
-//	@RequestMapping(value = "/deploy", method = RequestMethod.GET)
-//	public ModelAndView deployDBChangesView() {
-//		HashMap<String, ArrayList<String>> options;
-//		ArrayList<HashMap<String, String>> dbChangesTableValues;
-//		AtomicInteger totalNumberOfRows = new AtomicInteger();
-//		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus(null,0, TABLE_MAX_ROWS,totalNumberOfRows);
-//		options = new HashMap<String, ArrayList<String>>();
-//		options.put("lobs", repHandler.getLobs());
-//		options.put("db_schemas", repHandler.getDatabaseSchemaIds());
-//		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
-//		return new ModelAndView("DeployDBChanges", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("currentPage",1);
-//	}
-//	
+	@RequestMapping(value = "/deploy", method = RequestMethod.GET)
+	public ModelAndView deployDBChangesView() {
+		HashMap<String, ArrayList<String>> options;
+		ArrayList<HashMap<String, String>> dbChangesTableValues;
+		AtomicInteger totalNumberOfRows = new AtomicInteger();
+		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus(null,0, TABLE_MAX_ROWS,totalNumberOfRows);
+		options = new HashMap<String, ArrayList<String>>();
+		options.put("lobs", repHandler.getLobs());
+		options.put("db_schemas", repHandler.getDatabaseSchemaIds());
+		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
+		return new ModelAndView("DeployDBChanges", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("currentPage",1);
+	}
+	
 	@RequestMapping(value = "/getDbChangesTablePage", method = RequestMethod.POST)
 	public ModelAndView getDBChangesTablePage(@RequestParam(value = "page") int page, @RequestParam(value = "searchFilter", defaultValue = "{}") JSONObject searchFilterJSON) {
 		HashMap<String, ArrayList<String>> options;
@@ -109,6 +116,19 @@ public class DBCADController {
 		dbSchemasTableValues= repHandler.getDatabaseSchemas(searchFilterJSON.isNull("generalFilter") ? null : searchFilterJSON.getString("generalFilter"),(page-1)*TABLE_MAX_ROWS, TABLE_MAX_ROWS,totalNumberOfRows);
 		options = new HashMap<String, ArrayList<String>>();
 		return new ModelAndView("ManageDatabaseSchemaTable", "options", options).addObject("schema_table_values",dbSchemasTableValues).addObject("schemasNumOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("schemasCurrentPage",page);
+	}
+	
+	@RequestMapping(value = "/getDbInstancesTablePage", method = RequestMethod.POST)
+	public @ResponseBody String getDBInstancesTablePage(@RequestParam(value = "page") int page,@RequestParam(value = "searchFilter", defaultValue = "{}") JSONObject searchFilterJSON) {
+		Gson gson = new Gson();
+		JSONObject jsonResponse = new JSONObject();
+		ArrayList<DBInstance> dbInstancesTableValues;
+		AtomicInteger totalNumberOfRows = new AtomicInteger();
+		dbInstancesTableValues= repHandler.getDatabaseInstances(searchFilterJSON.isNull("generalFilter") ? null : searchFilterJSON.getString("generalFilter"),(page-1)*TABLE_MAX_ROWS, TABLE_MAX_ROWS,totalNumberOfRows);
+		jsonResponse.put("instanceTableValues", gson.toJson(dbInstancesTableValues));
+		jsonResponse.put("instancesNumOfPages", Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS));
+		jsonResponse.put("instancesCurrentPage",page);
+		return jsonResponse.toString();
 	}
 
 	@RequestMapping(value = "/rest/deploy/{lob_id}", method = RequestMethod.PUT)
@@ -195,6 +215,23 @@ public class DBCADController {
 			returnText = dbInstanceId;
 		} else {
 			returnText = "Error: DB Instance was not added";
+		}
+		return returnText;
+	}
+	
+	@RequestMapping(value = "/rest/db_instance/{db_instance_id}", method = RequestMethod.PUT)
+	public @ResponseBody
+	String saveDBInstance(@PathVariable("db_instance_id") String dbInstanceId, @RequestParam(value = "dbGroupId") String dbGroupId,@RequestParam(value = "dbHost") String dbHost,
+			@RequestParam(value = "dbPort") Integer dbPort,@RequestParam(value = "dbSid") String dbSid,@RequestParam(value = "pluginInstanceParameters") JSONObject pluginInstanceParameters) {
+		DBInstance dbInstance = new DBInstance(dbInstanceId,dbGroupId,dbHost,dbPort,dbSid,Utils.jsonToHashMap(pluginInstanceParameters));
+		String returnText;
+		String newDbInstanceId = repHandler.saveDatabaseInstance(dbInstance.getDbId(),
+				dbInstance.getDbGroupId(), dbInstance.getDbHost(),
+				dbInstance.getDbPort(), dbInstance.getDbSid(), dbInstance.getPluginInstanceParameters());
+		if (!newDbInstanceId.equals("")) {
+			returnText = newDbInstanceId;
+		} else {
+			returnText = "Error: DB Instance was not saved";
 		}
 		return returnText;
 	}

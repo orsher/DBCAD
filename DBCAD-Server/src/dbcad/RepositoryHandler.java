@@ -325,14 +325,21 @@ public class RepositoryHandler {
 		return databaseGroups;
 	}
 	
-	protected ArrayList<DBInstance> getDatabaseInstances(){
+	protected ArrayList<DBInstance> getDatabaseInstances(String generalFilter, int offset, int bulkSize, AtomicInteger totalRowNumber){
 		ResultSet rs = null;
 		ArrayList<DBInstance> databaseInstances = new ArrayList<DBInstance>();
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select db_id, db_group_id,host,port,sid from database_instance");
+			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_id, db_group_id,host,port,sid from database_instance limit ?,?");
+			preparedStatement.setInt(1, offset);
+			preparedStatement.setInt(2, bulkSize);
 			rs = preparedStatement.executeQuery();
+			Statement stmt= conn.createStatement();
+			ResultSet numRowsRs = stmt.executeQuery("SELECT FOUND_ROWS()");
+            if(numRowsRs.next()){
+            	totalRowNumber.set(numRowsRs.getInt(1));
+            }
 			while (rs.next()){
 				HashMap<String,String> pluginInstanceParameters = new HashMap<String,String>();
 				PreparedStatement innerPS = conn.prepareStatement("select parameter_name, parameter_value from db_plugin_instance_parameters where db_id=?");
@@ -399,6 +406,47 @@ public class RepositoryHandler {
 		return host+":"+port+":"+sid;
 	}
   }
+	
+	protected String saveDatabaseInstance(String dbId, String db_group_id, String host,Integer port, String sid, HashMap<String, String> pluginInstanceParameters ){
+		Connection conn=null;
+		String newDbId = host+":"+port+":"+sid;
+	try{
+		conn = datasource.getConnection();
+		PreparedStatement preparedStatement = conn.prepareStatement("update database_instance set db_id=?,db_group_id=?,host=?,port=?,sid=? where db_id=?");
+		preparedStatement.setString(1, newDbId);
+		preparedStatement.setString(2, db_group_id);
+		preparedStatement.setString(3, host);
+		preparedStatement.setInt(4, port);
+		preparedStatement.setString(5, sid);
+		preparedStatement.setString(6, dbId);
+		int result = preparedStatement.executeUpdate();
+		preparedStatement =  conn.prepareStatement("insert into db_plugin_instance_parameters (db_id,parameter_name,parameter_value) values (?,?,?) on duplicate key update parameter_value=?");
+		preparedStatement.setString(1, newDbId);
+	    for (String key : pluginInstanceParameters.keySet()){
+	    	preparedStatement.setString(2, key);
+	    	preparedStatement.setString(3, pluginInstanceParameters.get(key));
+	    	preparedStatement.setString(4, pluginInstanceParameters.get(key));
+	    	result = preparedStatement.executeUpdate();
+	    }
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
+		return (result > 0)  ? newDbId: "";
+	}catch(Exception e){
+		try{
+			conn.close();
+		}
+		catch(Exception ex){
+			System.out.println("Error: Could not close connection" );
+		}
+		e.printStackTrace();
+		return newDbId;
+	}
+  }
+	
 	protected boolean deleteDatabaseInstance(String dbInstanceId){
 		Connection conn=null;
 		try{

@@ -41,7 +41,7 @@
 		        $.ajax({
 			        type: "POST",
 			        url: "rest/db_change/"+$('#schema_select :selected').val()+"/"+$('#db_change_id_text_field').val(),
-			        data: "db_change_text="+$('#db_change_text').val()+ "&_method=PUT",
+			        data: "db_change_text="+encodeURIComponent($('#db_change_text').val())+ "&_method=PUT",
 			        success: function(response){
 				        closeCreateWindow();
 				        getPageNumber(currentPage);

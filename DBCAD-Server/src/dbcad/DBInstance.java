@@ -15,6 +15,7 @@ public class DBInstance {
 	
 	public DBInstance(String dbId,String dbGroupId, String dbHost, Integer dbPort,
 			String dbSid, HashMap<String,String> pluginInstanceParameters) {
+		this.dbId = dbId;
 		this.dbGroupId = dbGroupId;
 		this.dbHost = dbHost;
 		this.dbPort = dbPort;

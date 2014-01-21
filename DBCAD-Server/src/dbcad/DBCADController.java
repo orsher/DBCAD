@@ -135,7 +135,7 @@ public class DBCADController {
 	public @ResponseBody
 	String deployDBChangesOnLOB(@PathVariable("lob_id") String lobId,
 			@RequestParam("db_changes") JSONArray dbChanges) {
-		String dbChangeId;
+		/*String dbChangeId;
 		for (int i = 0; i < dbChanges.length(); i++) {
 			dbChangeId = dbChanges.getString(i);
 			repHandler.markDbChangeAsDeployed(dbChangeId, lobId);
@@ -146,7 +146,7 @@ public class DBCADController {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		} 
-	/*	DBService dbService = DBService.getDBService("Oracle");
+		DBService dbService = DBService.getDBService("Oracle");
 		HashMap<String,String> parameters = new HashMap<String,String>();
 		parameters.put("sqlPlusPath", "D:\\Ayelet Backup\\app\\ayelets\\product\\11.1.0\\client_1\\sqlplus.exe");
 		dbService.initializeDBService("dbqa", 1524, "dvlp2",parameters);
@@ -156,6 +156,7 @@ public class DBCADController {
 		parameters.put("mysqlClientPath", "c:\\mysql.exe");
 		dbService.initializeDBService("vm-qa-acdb", 3306, "mysql",parameters);
 		dbService.runScript("Select * from mysql.user;"); */
+		(new DeployThread(repHandler,lobId,dbChanges)).start();
 		return "JOB Was sent";
 	}
 

@@ -18,7 +18,7 @@ public class DeployThread extends Thread {
 		this.dbChanges = dbChanges;
 	}
 	
-	public void run_dbreq_on_lob(){
+	public void run(){
 		String dbChangeId;
 		String dbPluginType;
 		for (int i = 0; i < dbChanges.length(); i++) {
@@ -37,7 +37,6 @@ public class DeployThread extends Thread {
 						
 					}
 				}
-				
 				repHandler.markDbChangeAsDeployed(dbChangeId, lobId);
 			}
 		}

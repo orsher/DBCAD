@@ -21,6 +21,8 @@ public class OracleDBService extends DBService {
 	private String hostname=null;
 	private int port;
 	private String dbSID = null;
+	private String username = null;
+	private String password = null;
 	private String sqlPlusPath =null;
 	
 	@Override
@@ -30,18 +32,20 @@ public class OracleDBService extends DBService {
 
 	@Override
 	public boolean initializeDBService(DBInstance dbInstance, HashMap<String,String> parameters) {
-		this.hostname = hostname;
-		this.port =port;
-		this.dbSID = dbSID;
-		this.sqlPlusPath = parameters.get("sqlPlusPath");
+		this.hostname = dbInstance.getDbHost();
+		this.port =dbInstance.getDbPort();
+		this.dbSID = dbInstance.getPluginInstanceParameters().get("SID");
+		this.username = dbInstance.getPluginInstanceParameters().get("Username");
+		this.password = dbInstance.getPluginInstanceParameters().get("Password");
+		this.sqlPlusPath = parameters.get("SQLplus executable Path");
 		return true;
 	}
 
 	@Override
 	public boolean runScript(String script) {
 		ProcessBuilder processBuilder;
-		System.out.println(sqlPlusPath + "orsh@(description=(address=(PROTOCOL=TCP)(HOST="+hostname+")(PORT="+port+"))(connect_data=(sid="+dbSID+")))");
-		processBuilder = new ProcessBuilder(sqlPlusPath, "orsh@(description=(address=(PROTOCOL=TCP)(HOST="+hostname+")(PORT="+port+"))(connect_data=(sid="+dbSID+")))");
+		System.out.println(sqlPlusPath + " "+username+"@(description=(address=(PROTOCOL=TCP)(HOST="+hostname+")(PORT="+port+"))(connect_data=(sid="+dbSID+")))");
+		processBuilder = new ProcessBuilder(sqlPlusPath, username+"@(description=(address=(PROTOCOL=TCP)(HOST="+hostname+")(PORT="+port+"))(connect_data=(sid="+dbSID+")))");
         processBuilder.redirectErrorStream(true);
         try {
 	        final Process process = processBuilder.start();
@@ -65,7 +69,7 @@ public class OracleDBService extends DBService {
 	            }
 	        };
 	        printOutputThread.start();
-	        out.println("orsh");
+	        out.println(password);
 	        out.println(script);
 	        out.println("exit");
 	        out.flush();

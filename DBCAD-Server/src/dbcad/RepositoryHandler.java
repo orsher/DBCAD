@@ -532,10 +532,12 @@ public class RepositoryHandler {
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_requests (db_request_id,schema_id,code) values (?,?,?)");
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_requests (db_request_id,schema_id,code,created_timestamp,last_changed_timestamp) values (?,?,?,?,?)");
 			preparedStatement.setString(1, dbChangeId);
 			preparedStatement.setString(2, schemaId);
 			preparedStatement.setString(3, dbChangeText);
+			preparedStatement.setDate(4, new java.sql.Date(System.currentTimeMillis()));
+			preparedStatement.setDate(5, new java.sql.Date(System.currentTimeMillis()));
 			preparedStatement.executeUpdate();
 			try{
 				conn.close();
@@ -736,7 +738,7 @@ public class RepositoryHandler {
 			conn = datasource.getConnection();
 			PreparedStatement preparedStatement;
 			if (generalFilter == null){
-				preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_request_id, schema_id, code from db_requests limit ?,?");
+				preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_request_id, schema_id, code from db_requests order by created_timestamp desc limit ?,?");
 				preparedStatement.setInt(1, offset);
 				preparedStatement.setInt(2, bulkSize);
 			}
@@ -1009,7 +1011,12 @@ public class RepositoryHandler {
 			preparedStatement.setString(1, dbChangesId);
 			preparedStatement.setString(2, lob_id);
 			ResultSet statusRS = preparedStatement.executeQuery();
-			db_req_status = statusRS.getString("status");
+			if (statusRS.next()){
+				db_req_status = statusRS.getString("status");
+			}
+			else{
+				return false;
+			}
 			try{
 				conn.close();
 			}
@@ -1041,6 +1048,7 @@ public class RepositoryHandler {
 			PreparedStatement preparedStatement = conn.prepareStatement("select t.db_vendor from db_requests dbrq, db_schema s, database_type t where dbrq.schema_id = s.schema_id and s.db_type_id =t.db_type_id and dbrq.db_request_id = ?;");
 			preparedStatement.setString(1, dbChangeId);
 			ResultSet vendorRS = preparedStatement.executeQuery();
+			vendorRS.next();
 			db_type = vendorRS.getString("db_vendor");
 			try{
 				conn.close();
@@ -1069,6 +1077,7 @@ public class RepositoryHandler {
 			PreparedStatement preparedStatement = conn.prepareStatement("select code from db_requests where db_request_id = ?");
 			preparedStatement.setString(1, dbChangeId);
 			ResultSet codeRS = preparedStatement.executeQuery();
+			codeRS.next();
 			db_req_code = codeRS.getString("code");
 			try{
 				conn.close();
@@ -1094,9 +1103,9 @@ public class RepositoryHandler {
 		ArrayList<DBInstance> databaseInstances = new ArrayList<DBInstance>(); ;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select  a.host, a.port, a.sid from( select di.db_id , di.host, di.port, di.sid , di.db_group_id from db_requests r ,  deployable_instance_schema dis,  database_instance di where r.schema_id = dis.schema_id and dis.db_id = di.db_id  and r.db_request_id = ?) a,  lob_group_mapping lgm where a.db_group_id = lgm.db_group_id and lgm.lob_id = ?");
+			PreparedStatement preparedStatement = conn.prepareStatement("select  a.host, a.port, a.sid, a.db_id, a.db_group_id from( select di.db_id , di.host, di.port, di.sid , di.db_group_id from db_requests r ,  deployable_instance_schema dis,  database_instance di where r.schema_id = dis.schema_id and dis.db_id = di.db_id  and r.db_request_id = ?) a,  lob_group_mapping lgm where a.db_group_id = lgm.db_group_id and lgm.lob_id = ?");
 			preparedStatement.setString(1, dbChangeId);
-			preparedStatement.setString(2, dbChangeId);
+			preparedStatement.setString(2, lobId);
 			ResultSet instanceRS = preparedStatement.executeQuery();
 			while (instanceRS.next()){
 				HashMap<String,String> pluginInstanceParameters = new HashMap<String,String>();

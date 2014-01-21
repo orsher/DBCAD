@@ -145,12 +145,17 @@ public class DBCADController {
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
-		}
-		DBService dbService = DBService.getDBService("Oracle");
+		} 
+	/*	DBService dbService = DBService.getDBService("Oracle");
 		HashMap<String,String> parameters = new HashMap<String,String>();
-		parameters.put("sqlPlusPath", "d:\\oracle\\product\\11.2.0\\client_1\\bin\\sqlplus.exe");
+		parameters.put("sqlPlusPath", "D:\\Ayelet Backup\\app\\ayelets\\product\\11.1.0\\client_1\\sqlplus.exe");
 		dbService.initializeDBService("dbqa", 1524, "dvlp2",parameters);
-		dbService.runScript("Select * from v$database;");
+		dbService.runScript("Select * from v$database;");*/
+		/*DBService dbService = DBService.getDBService("Mysql");
+		HashMap<String,String> parameters = new HashMap<String,String>();
+		parameters.put("mysqlClientPath", "c:\\mysql.exe");
+		dbService.initializeDBService("vm-qa-acdb", 3306, "mysql",parameters);
+		dbService.runScript("Select * from mysql.user;"); */
 		return "JOB Was sent";
 	}
 

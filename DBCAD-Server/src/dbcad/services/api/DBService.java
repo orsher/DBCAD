@@ -1,8 +1,12 @@
 package dbcad.services.api;
 
+
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.ServiceLoader;
+
+import dbcad.DBInstance;
 
 public abstract class DBService {
 	
@@ -27,7 +31,9 @@ public abstract class DBService {
 	 	
 	    public abstract String getDBType();
 	    
-	    public abstract boolean initializeDBService(String hostname, int port, String dbSID,HashMap<String,String> parameters);
+	    public abstract boolean initializeDBService(DBInstance dbInstance, HashMap<String,String> globalParameters);
 	    
 	    public abstract boolean runScript(String script);
+	    
+	    public abstract boolean close();
 }

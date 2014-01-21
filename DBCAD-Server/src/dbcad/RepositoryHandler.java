@@ -1000,6 +1000,136 @@ public class RepositoryHandler {
 			return null;
 		}
 	}
+	public Boolean isDbChangeDeployed(String dbChangesId, String lob_id){
+		Connection conn=null;
+		String db_req_status = null;
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("select status from db_request_status drs, lob_group_mapping gm where drs.db_group_id=gm.db_group_id and drs.db_request_id=? and lob_id =? ");
+			preparedStatement.setString(1, dbChangesId);
+			preparedStatement.setString(2, lob_id);
+			ResultSet statusRS = preparedStatement.executeQuery();
+			db_req_status = statusRS.getString("status");
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
+			if (db_req_status.equals("DONE")) {
+				return true;
+			} else {
+				return false;
+			}
+		}
+		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
+			e.printStackTrace();
+			return false;
+		}
+	}
+	public String getDBPluginTypeForDbChange(String dbChangeId){
+		Connection conn=null;
+		String db_type = null;
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("select t.db_vendor from db_requests dbrq, db_schema s, database_type t where dbrq.schema_id = s.schema_id and s.db_type_id =t.db_type_id and dbrq.db_request_id = ?;");
+			preparedStatement.setString(1, dbChangeId);
+			ResultSet vendorRS = preparedStatement.executeQuery();
+			db_type = vendorRS.getString("db_vendor");
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
+			return db_type;
+		}
+		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
+			e.printStackTrace();
+			return null;
+		}
+	}
+	public String getDatabaseChangeScript(String dbChangeId){
+		Connection conn=null;
+		String db_req_code = null;
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("select code from db_requests where db_request_id = ?");
+			preparedStatement.setString(1, dbChangeId);
+			ResultSet codeRS = preparedStatement.executeQuery();
+			db_req_code = codeRS.getString("code");
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
+				return db_req_code;
+		}
+		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
+			e.printStackTrace();
+			return null;
+		}
+	}
+	public ArrayList<DBInstance> getDeployableDatabaseInstancesForLobIdAndDbChange(String dbChangeId,String lobId){
+		Connection conn=null;
+		ArrayList<DBInstance> databaseInstances = new ArrayList<DBInstance>(); ;
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("select  a.host, a.port, a.sid from( select di.db_id , di.host, di.port, di.sid , di.db_group_id from db_requests r ,  deployable_instance_schema dis,  database_instance di where r.schema_id = dis.schema_id and dis.db_id = di.db_id  and r.db_request_id = ?) a,  lob_group_mapping lgm where a.db_group_id = lgm.db_group_id and lgm.lob_id = ?");
+			preparedStatement.setString(1, dbChangeId);
+			preparedStatement.setString(2, dbChangeId);
+			ResultSet instanceRS = preparedStatement.executeQuery();
+			while (instanceRS.next()){
+				HashMap<String,String> pluginInstanceParameters = new HashMap<String,String>();
+				DBInstance dbInstance = new DBInstance(instanceRS.getString("db_id"),instanceRS.getString("db_group_id"),instanceRS.getString("host"),instanceRS.getInt("port"),instanceRS.getString("sid"),pluginInstanceParameters);		
+				PreparedStatement innerPS = conn.prepareStatement("select parameter_name, parameter_value from db_plugin_instance_parameters where db_id=?");
+				innerPS.setString(1,instanceRS.getString("db_id"));
+				ResultSet innerRS = innerPS.executeQuery();
+				while (innerRS.next()){
+					pluginInstanceParameters.put(innerRS.getString("parameter_name"), innerRS.getString("parameter_value"));
+				}
+				
+				databaseInstances.add(dbInstance);
+			}
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
+				return databaseInstances;
+		}
+		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
+			e.printStackTrace();
+			return null;
+		}
+	}
 }
 
 
+/*select di.* from db_requests dr, db_schema ds, database_groups dg,  database_instance di, lob_group_mapping lgm where dr.schema_id=ds.schema_id and ds.db_type_id = dg.db_type_id and dg.db_group_id = di.db_group_id and lgm.db_group_id =  dg.db_group_id and dr.db_request_id =? and  lgm.lob_id =? */

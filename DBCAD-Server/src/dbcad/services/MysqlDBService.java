@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import dbcad.DBInstance;
 import dbcad.services.api.DBService;
 
 public class MysqlDBService extends DBService {
@@ -21,20 +22,19 @@ public class MysqlDBService extends DBService {
 	}
 
 	@Override
-	public boolean initializeDBService(String hostname, int port , String dbSID, HashMap<String,String> parameters) {
+	public boolean initializeDBService(DBInstance dbInstance, HashMap<String,String> GlobalParameters) {
 		this.hostname = hostname;
 		this.port =port;
-		this.mysqlClientPath = parameters.get("mysqlClientPath");
+		this.mysqlClientPath = GlobalParameters.get("mysqlClientPath");
 		return true;
 	}
 	@Override
 	
 	public boolean runScript(String script) {
 		ProcessBuilder processBuilder;
-		System.out.println(mysqlClientPath + " " + "-h"+hostname+ " " + "-uayelets"+ " " +  "-P"+port + " -p");
-		processBuilder = new ProcessBuilder(mysqlClientPath , "-h"+hostname , "-uayelets",  "-P"+port, "-p" );
+		System.out.println(mysqlClientPath + " " + "-h"+hostname+ " " + "-uayelets"+ " " +  "-P"+port+ " " + "-p");
+		processBuilder = new ProcessBuilder(mysqlClientPath , "-h"+hostname , "-uayelets",  "-P"+port, "-payelets" );
         processBuilder.redirectErrorStream(true);
-        processBuilder.inheritIO();
         try {
 	        final Process process = processBuilder.start();
 	        BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -49,7 +49,6 @@ public class MysqlDBService extends DBService {
 	                    String line = null;
 	                    while ((line = reader.readLine()) != null) {
 	                        System.out.println(line);
-	                        System.out.flush();
 	                    }
 	                    reader.close();
 	                } catch (final Exception e) {
@@ -58,10 +57,8 @@ public class MysqlDBService extends DBService {
 	            }
 	        };
 	        printOutputThread.start();
-	        out.println("orsh");
-	        out.println("orsh");
-	        out.println("orsh");
-	        out.println("orsh");
+	        out.println(script);
+	        out.println("exit");
 	        out.flush();
 	        System.out.println("Read ended");
         }
@@ -84,6 +81,12 @@ public class MysqlDBService extends DBService {
 		instanceParameterNames.add("Username");
 		instanceParameterNames.add("Password");
 		return instanceParameterNames;
+	}
+	
+	public  boolean close(){
+		hostname=null;
+		port = 0;
+		return true;
 	}
 }
 

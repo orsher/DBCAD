@@ -18,22 +18,22 @@ public class DeployThread extends Thread {
 		this.dbChanges = dbChanges;
 	}
 	
-	public void run(){
+	public void run_dbreq_on_lob(){
 		String dbChangeId;
 		String dbPluginType;
 		for (int i = 0; i < dbChanges.length(); i++) {
 			dbChangeId = dbChanges.getString(i);
 			if (!repHandler.isDbChangeDeployed(dbChangeId,lobId)){
-				dbPluginType = repHandler.getDBPluginTypeForDbChange(dbChangeId);
 				String dbChangeScript = repHandler.getDatabaseChangeScript(dbChangeId);
+				dbPluginType = repHandler.getDBPluginTypeForDbChange(dbChangeId);
 				DBService dbService = DBService.getDBService(dbPluginType);
-				HashMap<String,String> parameters = repHandler.getDBPluginConfig(pluginDBType);
+				HashMap<String,String> globalParameters = repHandler.getDBPluginConfig(dbPluginType);
 				ArrayList<DBInstance> deployableInstances = repHandler.getDeployableDatabaseInstancesForLobIdAndDbChange(dbChangeId,lobId);
 				for (DBInstance deployableInstance : deployableInstances){
-					dbService.initializeDBService("dbqa", 1524, "dvlp2",parameters);
-					int exitCode = dbService.runScript(dbChangeScript);
+					dbService.initializeDBService(deployableInstance,globalParameters);
+					boolean exitCode = dbService.runScript(dbChangeScript);
 					dbService.close();
-					if (exitCode != 0){
+					if (exitCode != true){
 						
 					}
 				}

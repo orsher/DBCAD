@@ -11,6 +11,9 @@ import java.util.HashMap;
 
 
 
+
+
+import dbcad.DBInstance;
 import dbcad.services.api.DBService;
 
 public class OracleDBService extends DBService {
@@ -26,18 +29,18 @@ public class OracleDBService extends DBService {
 	}
 
 	@Override
-	public boolean initializeDBService(String hostname, int port, String dbSID, HashMap<String,String> parameters) {
+	public boolean initializeDBService(DBInstance dbInstance, HashMap<String,String> parameters) {
 		this.hostname = hostname;
 		this.port =port;
 		this.dbSID = dbSID;
-		this.sqlPlusPath = parameters.get(""
-				+ "");
+		this.sqlPlusPath = parameters.get("sqlPlusPath");
 		return true;
 	}
 
 	@Override
 	public boolean runScript(String script) {
 		ProcessBuilder processBuilder;
+		System.out.println(sqlPlusPath + "orsh@(description=(address=(PROTOCOL=TCP)(HOST="+hostname+")(PORT="+port+"))(connect_data=(sid="+dbSID+")))");
 		processBuilder = new ProcessBuilder(sqlPlusPath, "orsh@(description=(address=(PROTOCOL=TCP)(HOST="+hostname+")(PORT="+port+"))(connect_data=(sid="+dbSID+")))");
         processBuilder.redirectErrorStream(true);
         try {
@@ -88,5 +91,11 @@ public class OracleDBService extends DBService {
 		instanceParameterNames.add("Username");
 		instanceParameterNames.add("Password");
 		return instanceParameterNames;
+	}
+	
+	public  boolean close(){
+		hostname=null;
+		port = 0;
+		return true;
 	}
 }

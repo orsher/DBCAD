@@ -25,7 +25,7 @@
                     '    <ul>';
                     
                     $.each(this['pluginInstanceParameters'],function(key,value){
-                    	retValue += '<li>'+key+' = '+value+'</li>'
+                    		retValue += '<li>'+key+' = '+value+'</li>'
                     });
                     
                     retValue +='    </ul>'+

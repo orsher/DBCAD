@@ -25,7 +25,7 @@
 			        $.ajax({
 				        type: "POST",
 				        url: "rest/deploy/"+$(this).val(),
-				        data: "db_changes=["+checkedChangeIds+ "]&_method=PUT",
+				        data: "db_changes=["+checkedChangeIds+ "]&mark_only="+ $('#markOnlyCheckbox').is(":checked") +"&_method=PUT",
 				        success: function(response){
 					        closeDeployWindow();
 					        clearCheckedChangeIds();
@@ -82,6 +82,12 @@
 		            ajaxStop: function() { 
 		                $('body').removeClass("loading"); 
 		            }    
+		        });
+		        
+		        $('#generalFilterText').on('keyup', function(e) {
+		            if (e.which == 13) {
+		                filterChanges();
+		            }
 		        });
 	        }
 	        
@@ -141,6 +147,26 @@
 	        	});
 		        
 	        }
+	        function getLog(db_change_id,lob_id){
+	        	$.ajax({
+			        type: "POST",
+			        url: "rest/getLog",
+			        data: "_method=POST&db_change_id="+db_change_id+"&lob_id="+lob_id,
+			        success: function(response){
+			        	openViewLogWindow(response);
+			        },
+			        error: function(e){
+			        }
+		        });
+	        }
+	        function openViewLogWindow(log){
+	        	$('#view_log_div').addClass("Display");
+	        	$('#view_log_div #log_text').val(log);
+	        }
+	        function closeViewLogWindow(log){
+	        	$('#view_log_div').removeClass("Display");
+	        }
+	        
         </script>
 </head>
 <body onload="load()">
@@ -166,6 +192,7 @@
 		<form:select multiple="true" path="options" id="lob_select">
 		    <form:options items="${options.lobs}" />
 		</form:select>
+		<input type="checkbox" id="markOnlyCheckbox" checked> Mark only <br>
 		<input type="button" value="Finish" onclick="deploy()">
 		<br/>
 	</div>
@@ -190,6 +217,11 @@
 		<br/>
 		<input type="button" value="Create" onclick="createDBChange()">
 		<br/>
+	</div>
+	<div id="view_log_div" class="ontopwindows">
+		<img src="css/images/closex.png" class="closewindowbutton" onclick='closeViewLogWindow()'>
+		<div class="ontopwindow_heading">Log</div>
+		<textarea id="log_text" style="width: 500px; height: 170px;"></textarea>
 	</div>
 </body>
 </html>

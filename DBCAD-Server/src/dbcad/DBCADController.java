@@ -1,12 +1,21 @@
 package dbcad;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.PostConstruct;
+import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.SecretKey;
+import javax.crypto.spec.SecretKeySpec;
 
+import org.jasypt.util.password.StrongPasswordEncryptor;
+import org.jasypt.util.text.BasicTextEncryptor;
+import org.jasypt.util.text.StrongTextEncryptor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.stereotype.Controller;
@@ -25,6 +34,8 @@ import dbcad.services.api.DBService;
 
 @Controller
 public class DBCADController {
+	public final static String ENCRYPTION_KEY="PBEWITHFPBEWITHF";
+	public final static SecretKeySpec ENC_KEY = new SecretKeySpec(ENCRYPTION_KEY.getBytes(), "AES");
 	private static RepositoryHandler repHandler;
 	private static final int TABLE_MAX_ROWS = 10; 
 
@@ -134,7 +145,7 @@ public class DBCADController {
 	@RequestMapping(value = "/rest/deploy/{lob_id}", method = RequestMethod.PUT)
 	public @ResponseBody
 	String deployDBChangesOnLOB(@PathVariable("lob_id") String lobId,
-			@RequestParam("db_changes") JSONArray dbChanges) {
+			@RequestParam("db_changes") JSONArray dbChanges,@RequestParam("mark_only") boolean markOnly) {
 		/*String dbChangeId;
 		for (int i = 0; i < dbChanges.length(); i++) {
 			dbChangeId = dbChanges.getString(i);
@@ -156,7 +167,17 @@ public class DBCADController {
 		parameters.put("mysqlClientPath", "c:\\mysql.exe");
 		dbService.initializeDBService("vm-qa-acdb", 3306, "mysql",parameters);
 		dbService.runScript("Select * from mysql.user;"); */
-		(new DeployThread(repHandler,lobId,dbChanges)).start();
+		if (markOnly){
+			String dbChangeId;
+			for (int i = 0; i < dbChanges.length(); i++) {
+				dbChangeId = dbChanges.getString(i);
+				repHandler.markDbChangeDeploymentStatus(dbChangeId, lobId, "DONE");
+			}
+		}
+		else{
+			(new DeployThread(repHandler,lobId,dbChanges)).start();
+		}
+		
 		return "JOB Was sent";
 	}
 
@@ -229,6 +250,27 @@ public class DBCADController {
 	public @ResponseBody
 	String saveDBInstance(@PathVariable("db_instance_id") String dbInstanceId, @RequestParam(value = "dbGroupId") String dbGroupId,@RequestParam(value = "dbHost") String dbHost,
 			@RequestParam(value = "dbPort") Integer dbPort,@RequestParam(value = "dbSid") String dbSid,@RequestParam(value = "pluginInstanceParameters") JSONObject pluginInstanceParameters) {
+		
+		String dbPluginType = repHandler.getDBPluginTypeForDbID(dbInstanceId);
+		DBService dbService = DBService.getDBService(dbPluginType);
+		HashMap<String,HashMap<String,String>> parameterAttributes = dbService.getInstanceParameterAttributes();
+
+		try{
+			BasicTextEncryptor textEncryptor = new BasicTextEncryptor();
+			textEncryptor.setPassword(ENCRYPTION_KEY);
+		
+			Iterator<?> keys = pluginInstanceParameters.keys();
+			while( keys.hasNext() ){
+	            String key = (String)keys.next();
+	            if (parameterAttributes.get(key) != null && parameterAttributes.get(key).get("ENCRYPTED").equals("TRUE") ){
+	            	String clearTextValue = (String)pluginInstanceParameters.get(key);
+	            	pluginInstanceParameters.put(key,textEncryptor.encrypt(clearTextValue));
+	            }
+	        }
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
 		DBInstance dbInstance = new DBInstance(dbInstanceId,dbGroupId,dbHost,dbPort,dbSid,Utils.jsonToHashMap(pluginInstanceParameters));
 		String returnText;
 		String newDbInstanceId = repHandler.saveDatabaseInstance(dbInstance.getDbId(),
@@ -382,9 +424,10 @@ public class DBCADController {
 	String saveDbPluginConfig(@RequestParam("dbPluginType") String dbPluginType,@RequestParam("params") JSONObject dbPluginParams) {
 		HashMap<String,String> dbPluginParamsHash = new HashMap<String,String>();
 		Iterator<String> keys = dbPluginParams.keys();
+		
+		
 	    while(keys.hasNext()){
 	    	String key = keys.next();
-	    	String val = null;
 	        try{
 	             String value = dbPluginParams.getString(key);
 	             dbPluginParamsHash.put(key, value);
@@ -392,19 +435,34 @@ public class DBCADController {
 	            e.printStackTrace();
 	        }
 	    }
-		if (repHandler.saveDBPluginConfig(dbPluginType, dbPluginParamsHash) == 0){
-			return "DB Plugin Configurations saved.";
-		}
-		else{
+	    try {
+			String dbcadServerHostname = InetAddress.getLocalHost().getHostName();
+			if (repHandler.saveDBPluginConfig(dbPluginType, dbPluginParamsHash, "Fds") == 0){
+				return "DB Plugin Configurations saved.";
+			}
+			else{
+				return "Error: Could not save DB Plugin configurations";
+			}
+		} catch (UnknownHostException e) {
 			return "Error: Could not save DB Plugin configurations";
 		}
 	}
-
+	
+	@RequestMapping(value = "/rest/getLog", method = RequestMethod.POST)
+	public @ResponseBody
+	String getLog(@RequestParam("db_change_id") String dbChangeId, @RequestParam("lob_id") String lobId){
+		return (repHandler.getDeploymentLog(dbChangeId,lobId)).toString();
+	}
 	
 	public ArrayList<DatabasePluginConfig> getDBPluginsConfig(){
 		ArrayList<DatabasePluginConfig> pluginsConfig = new ArrayList<DatabasePluginConfig>(); 
 		for (DBService dbService : DBService.getDBServices()){
-			pluginsConfig.add(new DatabasePluginConfig(dbService.getDBType(),repHandler.getDBPluginConfig(dbService.getDBType()),dbService.getInstanceParameterNames()));
+			try {
+				String dbcadServerHostname = InetAddress.getLocalHost().getHostName();
+				pluginsConfig.add(new DatabasePluginConfig(dbService.getDBType(),repHandler.getDBPluginConfig(dbService.getDBType(),dbcadServerHostname),dbService.getInstanceParameterNames(),dbService.getInstanceParameterAttributes()));
+			} catch (UnknownHostException e) {
+				return null;
+			}
 		}
 		return pluginsConfig;
 	}

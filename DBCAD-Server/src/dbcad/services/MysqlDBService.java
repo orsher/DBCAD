@@ -6,6 +6,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import dbcad.DBInstance;
 import dbcad.services.api.DBService;
@@ -14,6 +15,8 @@ public class MysqlDBService extends DBService {
 	private final static String DB_TYPE = "Mysql";
 	private String hostname=null;
 	private int port;
+	private String username = null;
+	private String password = null;
 	private String mysqlClientPath =null;
 	
 	@Override
@@ -23,17 +26,21 @@ public class MysqlDBService extends DBService {
 
 	@Override
 	public boolean initializeDBService(DBInstance dbInstance, HashMap<String,String> GlobalParameters) {
-		this.hostname = hostname;
-		this.port =port;
-		this.mysqlClientPath = GlobalParameters.get("mysqlClientPath");
+		this.hostname = dbInstance.getDbHost();
+		this.port = dbInstance.getDbPort();
+		this.username = dbInstance.getPluginInstanceParameters().get("Username");
+		this.password = dbInstance.getPluginInstanceParameters().get("Password");
+		this.mysqlClientPath = GlobalParameters.get("mysql client executable Path");
 		return true;
 	}
 	@Override
 	
-	public boolean runScript(String script) {
+	public String runScript(String script, String dbSchemaName,AtomicInteger exitCode) {
+		final StringBuilder output= new StringBuilder();
 		ProcessBuilder processBuilder;
-		System.out.println(mysqlClientPath + " " + "-h"+hostname+ " " + "-uayelets"+ " " +  "-P"+port+ " " + "-p");
-		processBuilder = new ProcessBuilder(mysqlClientPath , "-h"+hostname , "-uayelets",  "-P"+port, "-payelets" );
+		
+		System.out.println(mysqlClientPath + " " + "-h"+hostname+ " " + "-u"+username+ " -P"+port+ " -p"+password);
+		processBuilder = new ProcessBuilder(mysqlClientPath , "-h"+hostname , "-u"+username,  "-P"+port, "-p"+password,"-vvv","-D"+dbSchemaName,"-e",script);
         processBuilder.redirectErrorStream(true);
         try {
 	        final Process process = processBuilder.start();
@@ -48,7 +55,7 @@ public class MysqlDBService extends DBService {
 	                            new InputStreamReader(process.getInputStream()));
 	                    String line = null;
 	                    while ((line = reader.readLine()) != null) {
-	                        System.out.println(line);
+	                    	output.append(line+"\n");
 	                    }
 	                    reader.close();
 	                } catch (final Exception e) {
@@ -57,15 +64,14 @@ public class MysqlDBService extends DBService {
 	            }
 	        };
 	        printOutputThread.start();
-	        out.println(script);
-	        out.println("exit");
-	        out.flush();
-	        System.out.println("Read ended");
+	        exitCode.set(process.waitFor());
+	        System.out.println("Read ended exit code: "+exitCode);
         }
         catch(Exception e){
         	e.printStackTrace();
+        	exitCode.set(1);
         }
-        return true;
+        return output.toString();
 	}
 	
 	@Override
@@ -87,6 +93,15 @@ public class MysqlDBService extends DBService {
 		hostname=null;
 		port = 0;
 		return true;
+	}
+	
+	@Override
+	public HashMap<String, HashMap<String, String>> getInstanceParameterAttributes() {
+		HashMap<String, HashMap<String, String>> instanceParameterAttributes =new HashMap<String, HashMap<String, String>>();
+		HashMap<String, String> attributes = new HashMap<String, String>();
+		attributes.put("ENCRYPTED", "TRUE");
+		instanceParameterAttributes.put("Password",attributes);
+		return instanceParameterAttributes;
 	}
 }
 

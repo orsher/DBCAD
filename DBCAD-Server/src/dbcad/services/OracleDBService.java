@@ -13,6 +13,12 @@ import java.util.HashMap;
 
 
 
+
+
+
+
+import java.util.concurrent.atomic.AtomicInteger;
+
 import dbcad.DBInstance;
 import dbcad.services.api.DBService;
 
@@ -42,10 +48,10 @@ public class OracleDBService extends DBService {
 	}
 
 	@Override
-	public boolean runScript(String script) {
+	public String runScript(String script, String dbSchemaName, AtomicInteger exitCode) {
+		final StringBuilder output= new StringBuilder();
 		ProcessBuilder processBuilder;
-		System.out.println(sqlPlusPath + " "+username+"@(description=(address=(PROTOCOL=TCP)(HOST="+hostname+")(PORT="+port+"))(connect_data=(sid="+dbSID+")))");
-		processBuilder = new ProcessBuilder(sqlPlusPath, username+"@(description=(address=(PROTOCOL=TCP)(HOST="+hostname+")(PORT="+port+"))(connect_data=(sid="+dbSID+")))");
+		processBuilder = new ProcessBuilder(sqlPlusPath, "-L",username+"@(description=(address=(PROTOCOL=TCP)(HOST="+hostname+")(PORT="+port+"))(connect_data=(sid="+dbSID+")))");
         processBuilder.redirectErrorStream(true);
         try {
 	        final Process process = processBuilder.start();
@@ -60,7 +66,7 @@ public class OracleDBService extends DBService {
 	                            new InputStreamReader(process.getInputStream()));
 	                    String line = null;
 	                    while ((line = reader.readLine()) != null) {
-	                        System.out.println(line);
+	                        output.append(line+"\n");
 	                    }
 	                    reader.close();
 	                } catch (final Exception e) {
@@ -70,15 +76,20 @@ public class OracleDBService extends DBService {
 	        };
 	        printOutputThread.start();
 	        out.println(password);
+	        out.println("set echo on");
+	        out.println("whenever SQLERROR exit FAILURE;");
 	        out.println(script);
 	        out.println("exit");
 	        out.flush();
-	        System.out.println("Read ended");
+	        exitCode.set(process.waitFor());
+	        out.flush();
+	        System.out.println("DT: "+exitCode);
         }
         catch(Exception e){
         	e.printStackTrace();
+        	exitCode.set(1);
         }
-        return true;
+        return output.toString();
 	}
 
 	@Override
@@ -97,9 +108,19 @@ public class OracleDBService extends DBService {
 		return instanceParameterNames;
 	}
 	
+	
 	public  boolean close(){
 		hostname=null;
 		port = 0;
 		return true;
+	}
+
+	@Override
+	public HashMap<String, HashMap<String, String>> getInstanceParameterAttributes() {
+		HashMap<String, HashMap<String, String>> instanceParameterAttributes =new HashMap<String, HashMap<String, String>>();
+		HashMap<String, String> attributes = new HashMap<String, String>();
+		attributes.put("ENCRYPTED", "TRUE");
+		instanceParameterAttributes.put("Password",attributes);
+		return instanceParameterAttributes;
 	}
 }

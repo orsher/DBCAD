@@ -20,7 +20,7 @@
                             <td>${dbChange.db_request_id}</td>
                             <td class="dividing-column">${dbChange.schema_id}</td>
                             <c:forEach items="${options.lobs}" var="lob">
-                        		<td>${dbChange[lob]}</td>
+                        		<td><div onclick="getLog('${dbChange.db_request_id}','${lob}')">${dbChange[lob]}</div></td>
                         	</c:forEach>
                         </tr>
                     </c:forEach>

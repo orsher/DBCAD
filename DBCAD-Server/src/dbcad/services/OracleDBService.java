@@ -30,6 +30,7 @@ public class OracleDBService extends DBService {
 	private String username = null;
 	private String password = null;
 	private String sqlPlusPath =null;
+	private String oracleHome =null;
 	
 	@Override
 	public String getDBType() {
@@ -44,6 +45,7 @@ public class OracleDBService extends DBService {
 		this.username = dbInstance.getPluginInstanceParameters().get("Username");
 		this.password = dbInstance.getPluginInstanceParameters().get("Password");
 		this.sqlPlusPath = parameters.get("SQLplus executable Path");
+		this.oracleHome = parameters.get("Oracle Home");
 		return true;
 	}
 
@@ -51,8 +53,9 @@ public class OracleDBService extends DBService {
 	public String runScript(String script, String dbSchemaName, AtomicInteger exitCode) {
 		final StringBuilder output= new StringBuilder();
 		ProcessBuilder processBuilder;
-		processBuilder = new ProcessBuilder(sqlPlusPath, "-L",username+"@(description=(address=(PROTOCOL=TCP)(HOST="+hostname+")(PORT="+port+"))(connect_data=(sid="+dbSID+")))");
+		processBuilder = new ProcessBuilder(sqlPlusPath, "-L",username+"/"+password+"@(description=(address=(PROTOCOL=TCP)(HOST="+hostname+")(PORT="+port+"))(connect_data=(sid="+dbSID+")))");
         processBuilder.redirectErrorStream(true);
+        processBuilder.environment().put("ORACLE_HOME", oracleHome);
         try {
 	        final Process process = processBuilder.start();
 	        BufferedReader in = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -75,7 +78,7 @@ public class OracleDBService extends DBService {
 	            }
 	        };
 	        printOutputThread.start();
-	        out.println(password);
+	        //out.println(password);
 	        out.println("set echo on");
 	        out.println("whenever SQLERROR exit FAILURE;");
 	        out.println(script);
@@ -96,6 +99,7 @@ public class OracleDBService extends DBService {
 	public ArrayList<String> getGlobalParameterNames() {
 		ArrayList<String> globalParameterNames = new ArrayList<String>();
 		globalParameterNames.add("SQLplus executable Path");
+		globalParameterNames.add("Oracle Home");
 		return globalParameterNames;
 	}
 

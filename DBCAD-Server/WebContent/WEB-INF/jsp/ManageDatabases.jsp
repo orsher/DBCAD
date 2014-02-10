@@ -16,7 +16,8 @@
         		$('#instances-table-body').empty();
         		var retValue="";
         		$.each(instanceTableValuesJson, function(){
-        			retValue += '<tr class="table_row">'+    
+        			retValue += '<tr class="table_row">'+
+        			'<td>'+this['dbId']+'</td>'+
                     '<td>'+this['dbGroupId']+'</td>'+
                     '<td>'+this['dbHost']+'</td>'+
                     '<td>'+this['dbPort']+'</td>'+
@@ -103,6 +104,7 @@
 		        var dbHost = $('#create_db_instance_div  #host').val();
 		        var dbPort = $('#create_db_instance_div  #port').val();
 		        var dbSid = $('#create_db_instance_div  #sid').val();
+		        var dbId = $('#create_db_instance_div  #dbid').val();
 		        var pluginInstanceParameters = {};
 		        var dbPluginType = $('#create_db_instance_div #group_select :selected').attr("dbplugintype");
 		        $('#create_db_instance_div '+'.'+dbPluginType+'_InstanceParameter').each(function(){
@@ -110,7 +112,7 @@
 		        });
 		        $.ajax({
 			        type: "POST",
-			        url: "rest/db_instance",
+			        url: "rest/db_instance/"+dbId,
 			        data: "dbGroupId=" + dbGroupId + "&dbHost=" + dbHost + "&dbPort=" + dbPort + "&dbSid=" + dbSid + "&pluginInstanceParameters="+JSON.stringify(pluginInstanceParameters)+"&_method=PUT",
 			        success: function(response){
 			        	closeCreateInstanceWindow()
@@ -135,7 +137,7 @@
 		        $.ajax({
 			        type: "POST",
 			        url: "rest/db_instance/"+dbId,
-			        data: "dbGroupId=" + dbGroupId + "&dbHost=" + dbHost + "&dbPort=" + dbPort + "&dbSid=" + dbSid + "&pluginInstanceParameters="+JSON.stringify(pluginInstanceParameters)+"&_method=PUT",
+			        data: "dbGroupId=" + dbGroupId + "&dbHost=" + dbHost + "&dbPort=" + dbPort + "&dbSid=" + dbSid + "&pluginInstanceParameters="+JSON.stringify(pluginInstanceParameters)+"&_method=POST",
 			        success: function(response){
 			        	closeEditInstanceWindow();
 			        	getInstancesPageNumber(currentManageInstancePage);
@@ -334,6 +336,12 @@
 	        {
 	        	$('#manage-databases-link').addClass("current");
 	        	fillInstancesTable();
+	        	$('#create_db_instance_div #host').keyup(function(){
+	        		$('#create_db_instance_div #dbid').val($('#create_db_instance_div #host').val()+":"+$('#create_db_instance_div #port').val());
+	        	});
+	        	$('#create_db_instance_div #port').keyup(function(){
+	        		$('#create_db_instance_div #dbid').val($('#create_db_instance_div #host').val()+":"+$('#create_db_instance_div #port').val());
+	        	});
 	        }
         	function openCreateInstanceWindow(){
         		setNewInstancePluginTypeParametersInput();
@@ -466,6 +474,7 @@
 				    		<option id="${db_group.db_group_id}" value="${db_group.db_group_id}" dbPluginType="${db_group.db_plugin_type}">${db_group.db_group_id}</option>
 				    	</c:forEach>
 					</select>
+					<input type="text" id="dbid" name="dbid" placeholder="DB ID (usually host:port).." class="input_field"/>
 					<input type="text" id="host" name="host" placeholder="host..." class="input_field"/>
 					<input type="text" id="port" name="port" placeholder="port..."class="input_field"/>
 					<input type="text" id="sid" name="sid" placeholder="sid..." class="input_field"/>

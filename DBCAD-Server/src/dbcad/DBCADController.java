@@ -45,8 +45,9 @@ public class DBCADController {
 	
 	@PostConstruct
 	public void initializeDBCAD(){
-		ArrayList<String> parameters = new ArrayList<String>();
+		
 		for (DBService dbService : DBService.getDBServices()){
+			ArrayList<String> parameters = new ArrayList<String>();
 			for (String globalParameterName : dbService.getGlobalParameterNames()){
 				parameters.add(globalParameterName);
 			}
@@ -229,16 +230,16 @@ public class DBCADController {
 		return returnText;
 	}
 
-	@RequestMapping(value = "/rest/db_instance", method = RequestMethod.PUT)
+	@RequestMapping(value = "/rest/db_instance/{db_instance_id}", method = RequestMethod.PUT)
 	public @ResponseBody
-	String addDBInstance(@RequestParam(value = "dbGroupId") String dbGroupId,@RequestParam(value = "dbHost") String dbHost,
+	String addDBInstance(@PathVariable("db_instance_id") String dbInstanceId, @RequestParam(value = "dbGroupId") String dbGroupId,@RequestParam(value = "dbHost") String dbHost,
 			@RequestParam(value = "dbPort") Integer dbPort,@RequestParam(value = "dbSid") String dbSid,@RequestParam(value = "pluginInstanceParameters") JSONObject pluginInstanceParameters) {
-		DBInstance dbInstance = new DBInstance(null,dbGroupId,dbHost,dbPort,dbSid,Utils.jsonToHashMap(pluginInstanceParameters));
+		DBInstance dbInstance = new DBInstance(dbInstanceId,dbGroupId,dbHost,dbPort,dbSid,Utils.jsonToHashMap(pluginInstanceParameters));
 		String returnText;
-		String dbInstanceId = repHandler.addDatabaseInstance(
+		int retCode = repHandler.addDatabaseInstance(dbInstance.getDbId(),
 				dbInstance.getDbGroupId(), dbInstance.getDbHost(),
 				dbInstance.getDbPort(), dbInstance.getDbSid(), dbInstance.getPluginInstanceParameters());
-		if (!dbInstanceId.equals("")) {
+		if (retCode == RepositoryHandler.REP_OK) {
 			returnText = dbInstanceId;
 		} else {
 			returnText = "Error: DB Instance was not added";
@@ -246,7 +247,7 @@ public class DBCADController {
 		return returnText;
 	}
 	
-	@RequestMapping(value = "/rest/db_instance/{db_instance_id}", method = RequestMethod.PUT)
+	@RequestMapping(value = "/rest/db_instance/{db_instance_id}", method = RequestMethod.POST)
 	public @ResponseBody
 	String saveDBInstance(@PathVariable("db_instance_id") String dbInstanceId, @RequestParam(value = "dbGroupId") String dbGroupId,@RequestParam(value = "dbHost") String dbHost,
 			@RequestParam(value = "dbPort") Integer dbPort,@RequestParam(value = "dbSid") String dbSid,@RequestParam(value = "pluginInstanceParameters") JSONObject pluginInstanceParameters) {
@@ -437,7 +438,7 @@ public class DBCADController {
 	    }
 	    try {
 			String dbcadServerHostname = InetAddress.getLocalHost().getHostName();
-			if (repHandler.saveDBPluginConfig(dbPluginType, dbPluginParamsHash, "Fds") == 0){
+			if (repHandler.saveDBPluginConfig(dbPluginType, dbPluginParamsHash, dbcadServerHostname) == 0){
 				return "DB Plugin Configurations saved.";
 			}
 			else{

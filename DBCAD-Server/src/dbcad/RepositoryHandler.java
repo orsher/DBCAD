@@ -28,7 +28,9 @@ import org.json.JSONObject;
  * 
  */
 public class RepositoryHandler {
-//	private static Connection conn = null;
+	public static final int REP_OK=0;
+	public static final int REP_ERR=-1;
+
 	Datasource datasource;
 	public RepositoryHandler(){
 		try {
@@ -368,20 +370,19 @@ public class RepositoryHandler {
 		return databaseInstances;
 	}
 
-	protected String addDatabaseInstance(String db_group_id, String host,Integer port, String sid, HashMap<String, String> pluginInstanceParameters ){
+	protected int addDatabaseInstance(String dbId,String db_group_id, String host, Integer port, String sid, HashMap<String, String> pluginInstanceParameters ){
 		Connection conn=null;
 	try{
 		conn = datasource.getConnection();
 		PreparedStatement preparedStatement = conn.prepareStatement("insert into database_instance (db_id,db_group_id,host,port,sid) values (?,?,?,?,?)");
-		String db_id = host+":"+port+":"+sid;
-		preparedStatement.setString(1, db_id);
+		preparedStatement.setString(1, dbId);
 		preparedStatement.setString(2, db_group_id);
 		preparedStatement.setString(3, host);
 		preparedStatement.setInt(4, port);
 		preparedStatement.setString(5, sid);
 		int result = preparedStatement.executeUpdate();
 		preparedStatement =  conn.prepareStatement("insert into db_plugin_instance_parameters (db_id,parameter_name,parameter_value) values (?,?,?)");
-		preparedStatement.setString(1, db_id);
+		preparedStatement.setString(1, dbId);
 	    for (String key : pluginInstanceParameters.keySet()){
 	    	String val = null;
 	    	preparedStatement.setString(2, key);
@@ -394,7 +395,7 @@ public class RepositoryHandler {
 		catch(Exception e){
 			System.out.println("Error: Could not close connection" );
 		}
-		return (result > 0)  ? host+":"+port+":"+sid: "";
+		return (result > 0)  ? REP_OK : REP_ERR;
 	}catch(Exception e){
 		try{
 			conn.close();
@@ -403,7 +404,7 @@ public class RepositoryHandler {
 			System.out.println("Error: Could not close connection" );
 		}
 		e.printStackTrace();
-		return host+":"+port+":"+sid;
+		return REP_ERR;
 	}
   }
 	
@@ -980,9 +981,10 @@ public class RepositoryHandler {
 		HashMap<String,String> dbPluginParamValues = new HashMap<String,String>();
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select parameter_name, parameter_value from db_plugin_global_parameter_values where plugin_name=? and dbcad_server=?");
+			PreparedStatement preparedStatement = conn.prepareStatement("select p.parameter_name, v.parameter_value from (select plugin_name,parameter_name,parameter_value from db_plugin_global_parameter_values where plugin_name=? and dbcad_server=?) v right outer join (select plugin_name,parameter_name from db_plugin_global_parameters where plugin_name=?) p on (v.plugin_name=p.plugin_name and v.parameter_name=p.parameter_name)");
 			preparedStatement.setString(1, pluginDBType);
 			preparedStatement.setString(2, dbcadServerHostname);
+			preparedStatement.setString(3, pluginDBType);
 			ResultSet paramsRS = preparedStatement.executeQuery();
 			while (paramsRS.next()){
 				dbPluginParamValues.put(paramsRS.getString("parameter_name"), paramsRS.getString("parameter_value"));

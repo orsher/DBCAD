@@ -5,6 +5,7 @@
 <table id="instances-table" class="table">
 	                <thead>
 	                    <tr>
+	                    	<th>Database Id</th>
 	                        <th>Database Group Id</th>
 	                        <th>Database Host</th>
 	                        <th>Database Port</th>

@@ -66,14 +66,16 @@ public class DBCADController {
 		HashMap<String, ArrayList<String>> options;
 		ArrayList<HashMap<String, String>> typeTableValues;
 		ArrayList<DBInstance> instanceTableValues;
-		ArrayList<HashMap<String, String>> groupTableValues;
+		ArrayList<DBGroup> groupTableValues;
 		ArrayList<DBSchema> schemaTableValues;
 		ModelAndView mav = new ModelAndView("ManageDatabases");
 		options = new HashMap<String, ArrayList<String>>();
 		options.put("db_roles", repHandler.getDatabaseRoles());
-		options.put("db_vendors", repHandler.getDatabaseVendors());
+		//options.put("db_vendors", repHandler.getDatabaseVendors());
 		options.put("db_groups", repHandler.getDatabaseGroupIds());
 		options.put("db_types", repHandler.getDatabaseTypeIds());
+		options.put("db_instance_ids",repHandler.getDatabaseIds());
+		options.put("db_plugin_types", DBService.getAvailableDbPluginTypeNames());
 		options.put("lobs", repHandler.getLobs());
 		typeTableValues = repHandler.getDatabaseTypes();
 		AtomicInteger instancesTableTotalNumberOfRows = new AtomicInteger();
@@ -202,9 +204,7 @@ public class DBCADController {
 			BindingResult result) {
 		String returnText;
 		if (!result.hasErrors()) {
-			System.out.println("TYPE::: " + dbType.getDbRole() + " "
-					+ dbType.getDbVendor());
-			String dbTypeId = repHandler.addDatabaseType(dbType.getDbVendor(),
+			String dbTypeId = repHandler.addDatabaseType(dbType.getDbPluginType(),
 					dbType.getDbRole());
 			if (!dbTypeId.equals("")) {
 				returnText = dbTypeId;
@@ -232,13 +232,12 @@ public class DBCADController {
 
 	@RequestMapping(value = "/rest/db_instance/{db_instance_id}", method = RequestMethod.PUT)
 	public @ResponseBody
-	String addDBInstance(@PathVariable("db_instance_id") String dbInstanceId, @RequestParam(value = "dbGroupId") String dbGroupId,@RequestParam(value = "dbHost") String dbHost,
-			@RequestParam(value = "dbPort") Integer dbPort,@RequestParam(value = "dbSid") String dbSid,@RequestParam(value = "pluginInstanceParameters") JSONObject pluginInstanceParameters) {
-		DBInstance dbInstance = new DBInstance(dbInstanceId,dbGroupId,dbHost,dbPort,dbSid,Utils.jsonToHashMap(pluginInstanceParameters));
+	String addDBInstance(@PathVariable("db_instance_id") String dbInstanceId, @RequestParam(value = "dbPluginType") String dbPluginType, @RequestParam(value = "dbHost") String dbHost,
+			@RequestParam(value = "dbPort") Integer dbPort,@RequestParam(value = "pluginInstanceParameters") JSONObject pluginInstanceParameters) {
+		DBInstance dbInstance = new DBInstance(dbInstanceId,dbPluginType,dbHost,dbPort,Utils.jsonToHashMap(pluginInstanceParameters));
 		String returnText;
-		int retCode = repHandler.addDatabaseInstance(dbInstance.getDbId(),
-				dbInstance.getDbGroupId(), dbInstance.getDbHost(),
-				dbInstance.getDbPort(), dbInstance.getDbSid(), dbInstance.getPluginInstanceParameters());
+		int retCode = repHandler.addDatabaseInstance(dbInstance.getDbId(),dbInstance.getDbPluginType(), dbInstance.getDbHost(),
+				dbInstance.getDbPort(), dbInstance.getPluginInstanceParameters());
 		if (retCode == RepositoryHandler.REP_OK) {
 			returnText = dbInstanceId;
 		} else {
@@ -249,10 +248,9 @@ public class DBCADController {
 	
 	@RequestMapping(value = "/rest/db_instance/{db_instance_id}", method = RequestMethod.POST)
 	public @ResponseBody
-	String saveDBInstance(@PathVariable("db_instance_id") String dbInstanceId, @RequestParam(value = "dbGroupId") String dbGroupId,@RequestParam(value = "dbHost") String dbHost,
-			@RequestParam(value = "dbPort") Integer dbPort,@RequestParam(value = "dbSid") String dbSid,@RequestParam(value = "pluginInstanceParameters") JSONObject pluginInstanceParameters) {
+	String saveDBInstance(@PathVariable("db_instance_id") String dbInstanceId, @RequestParam(value = "dbPluginType") String dbPluginType,@RequestParam(value = "dbHost") String dbHost,
+			@RequestParam(value = "dbPort") Integer dbPort,@RequestParam(value = "pluginInstanceParameters") JSONObject pluginInstanceParameters) {
 		
-		String dbPluginType = repHandler.getDBPluginTypeForDbID(dbInstanceId);
 		DBService dbService = DBService.getDBService(dbPluginType);
 		HashMap<String,HashMap<String,String>> parameterAttributes = dbService.getInstanceParameterAttributes();
 
@@ -272,11 +270,10 @@ public class DBCADController {
 		}catch(Exception e){
 			e.printStackTrace();
 		}
-		DBInstance dbInstance = new DBInstance(dbInstanceId,dbGroupId,dbHost,dbPort,dbSid,Utils.jsonToHashMap(pluginInstanceParameters));
+		DBInstance dbInstance = new DBInstance(dbInstanceId,dbPluginType,dbHost,dbPort,Utils.jsonToHashMap(pluginInstanceParameters));
 		String returnText;
-		String newDbInstanceId = repHandler.saveDatabaseInstance(dbInstance.getDbId(),
-				dbInstance.getDbGroupId(), dbInstance.getDbHost(),
-				dbInstance.getDbPort(), dbInstance.getDbSid(), dbInstance.getPluginInstanceParameters());
+		String newDbInstanceId = repHandler.saveDatabaseInstance(dbInstance.getDbId(),dbInstance.getDbPluginType(),dbInstance.getDbHost(),
+				dbInstance.getDbPort(), dbInstance.getPluginInstanceParameters());
 		if (!newDbInstanceId.equals("")) {
 			returnText = newDbInstanceId;
 		} else {
@@ -347,19 +344,16 @@ public class DBCADController {
 	
 	@RequestMapping(value = "/rest/db_group/{db_group_id}", method = RequestMethod.PUT)
 	public @ResponseBody
-	String addDBGroup(@RequestParam(value = "dbTypeId") String dbTypeId,@PathVariable("db_group_id") String dbGroupId,@RequestParam("dbLobList") JSONArray dbLobList) {
+	String addDBGroup(@RequestParam(value = "dbTypeId") String dbTypeId,@PathVariable("db_group_id") String dbGroupId,@RequestParam("dbLobList") JSONArray dbLobList,@RequestParam("dbInstances") JSONObject dbInstances) {
 		String returnText;
-		int statusCode = repHandler.addDatabaseGroup(dbGroupId, dbTypeId);
+		DBGroup newDBGroup = new DBGroup();
+		newDBGroup.setDbGroupId(dbGroupId);
+		newDBGroup.setDbTypeId(dbTypeId);
+		newDBGroup.setLobs(Utils.jsonArrayToArrayList(dbLobList));
+		newDBGroup.setDatabaseInstances(Utils.jsonToBooleanHashMap(dbInstances));
+		int statusCode = repHandler.addDatabaseGroup(newDBGroup);
 		if (statusCode == 0) {
-			for (int i = 0; i < dbLobList.length(); i++) {
-				statusCode = repHandler.addDatabaseGroupLobMapping(dbGroupId,dbLobList.getString(i));
-			}
-			if (statusCode == 0){
-				returnText = "Database group added";
-			}
-			else {
-				returnText = "Error: Database Group was not added";
-			}
+			returnText = "Database group added";
 		} else {
 			returnText = "Error: Database Group was not added";
 		}
@@ -381,19 +375,24 @@ public class DBCADController {
 	
 	@RequestMapping(value = "/rest/db_instance", method = RequestMethod.GET)
 	public @ResponseBody
-	String findDBInstances(@RequestParam(value = "dbTypeId") String dbTypeId) {
-		return (new JSONArray(repHandler.getDatabaseIds(dbTypeId))).toString();
+	String findDBInstances(@RequestParam(value = "dbPluginType") String dbPluginType) {
+		return (new JSONArray(repHandler.getDatabaseInstanceIds(dbPluginType))).toString();
+	}
+	
+	@RequestMapping(value = "/rest/db_group", method = RequestMethod.GET)
+	public @ResponseBody
+	String findDBGroups(@RequestParam(value = "dbTypeId") String dbTypeId) {
+		return (new JSONArray(repHandler.getDatabaseGroupIds(dbTypeId))).toString();
 	}
 	
 	@RequestMapping(value = "/rest/db_schema/{schema_id}", method = RequestMethod.PUT)
 	public @ResponseBody
-	String addSchema(@RequestParam(value = "dbTypeId") String dbTypeId,@PathVariable("schema_id") String schemaId,@RequestParam("dbDeployableList") JSONArray dbDeployableList,@RequestParam(value = "schemaName") String schemaName) {
+	String addSchema(@RequestParam(value = "dbTypeId") String dbTypeId,@PathVariable("schema_id") String schemaId,@RequestParam("dbGroupList") JSONArray dbGroupList,@RequestParam(value = "schemaName") String schemaName) {
 		String returnText;
-		System.out.println(schemaId + schemaName + dbTypeId + dbDeployableList);
-		int statusCode = repHandler.addDatabaseSchema(schemaId,schemaName,dbTypeId);
+		int statusCode = repHandler.addDatabaseSchema(schemaId,dbTypeId);
 		if (statusCode == 0) {
-			for (int i = 0; i < dbDeployableList.length(); i++) {
-				statusCode = repHandler.addDeployableDBInstance(schemaId,dbDeployableList.getString(i));
+			for (int i = 0; i < dbGroupList.length(); i++) {
+				statusCode = repHandler.addSchemaToDBGroup(dbGroupList.getString(i),schemaId,schemaName);
 			}
 			if (statusCode == 0){
 				returnText = "Database schema added";

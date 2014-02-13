@@ -18,10 +18,9 @@
         		$.each(instanceTableValuesJson, function(){
         			retValue += '<tr class="table_row">'+
         			'<td>'+this['dbId']+'</td>'+
-                    '<td>'+this['dbGroupId']+'</td>'+
+                    '<td>'+this['dbPluginType']+'</td>'+
                     '<td>'+this['dbHost']+'</td>'+
                     '<td>'+this['dbPort']+'</td>'+
-                    '<td>'+this['dbSid']+'</td>'+
                     '<td>'+
                     '    <ul>';
                     
@@ -77,13 +76,13 @@
         	
 	        function addDbType() {
 		        // get the form values
-		        var dbVendor = $('#db_vendor').val();
+		        var dbPluginType = $('#db_plugin_type').val();
 		        var dbRole = $('#db_role').val();
 		
 		        $.ajax({
 			        type: "POST",
 			        url: "rest/db_type",
-			        data: "dbVendor=" + dbVendor + "&dbRole=" + dbRole + "&_method=PUT",
+			        data: "dbPluginType=" + dbPluginType + "&dbRole=" + dbRole + "&_method=PUT",
 			        success: function(response){
 				        // we have the response
 				        $('#info').html(response);
@@ -100,20 +99,19 @@
 	        }
 	        function addDbInstance() {
 		        // get the form values
-		        var dbGroupId = $('#create_db_instance_div  #group_select').val();
+		        var dbPluginType = $('#create_db_instance_div  #db_plugin_type_select').val();
 		        var dbHost = $('#create_db_instance_div  #host').val();
 		        var dbPort = $('#create_db_instance_div  #port').val();
 		        var dbSid = $('#create_db_instance_div  #sid').val();
 		        var dbId = $('#create_db_instance_div  #dbid').val();
 		        var pluginInstanceParameters = {};
-		        var dbPluginType = $('#create_db_instance_div #group_select :selected').attr("dbplugintype");
 		        $('#create_db_instance_div '+'.'+dbPluginType+'_InstanceParameter').each(function(){
 		        	pluginInstanceParameters[$(this).attr('id')] = $(this).val();
 		        });
 		        $.ajax({
 			        type: "POST",
 			        url: "rest/db_instance/"+dbId,
-			        data: "dbGroupId=" + dbGroupId + "&dbHost=" + dbHost + "&dbPort=" + dbPort + "&dbSid=" + dbSid + "&pluginInstanceParameters="+JSON.stringify(pluginInstanceParameters)+"&_method=PUT",
+			        data: "dbPluginType=" + dbPluginType + "&dbHost=" + dbHost + "&dbPort=" + dbPort + "&dbSid=" + dbSid + "&pluginInstanceParameters="+JSON.stringify(pluginInstanceParameters)+"&_method=PUT",
 			        success: function(response){
 			        	closeCreateInstanceWindow()
 			        	getInstancesPageNumber(currentManageInstancePage);
@@ -124,20 +122,19 @@
 		        });
 	        }
 	        function saveDbInstance() {
-	        	var dbGroupId = $('#edit_db_instance_div  #group_select').val();
+	        	var dbPluginType = $('#edit_db_instance_div  #db_plugin_type_select').val();
 		        var dbHost = $('#edit_db_instance_div  #host').val();
 		        var dbPort = $('#edit_db_instance_div  #port').val();
 		        var dbSid = $('#edit_db_instance_div  #sid').val();
 		        var dbId = $('#edit_db_instance_div  #dbid').val();
 		        var pluginInstanceParameters = {};
-		        var dbPluginType = $('#edit_db_instance_div #group_select :selected').attr("dbplugintype");
 		        $('#edit_db_instance_div '+'.'+dbPluginType+'_InstanceParameter').each(function(){
 		        	pluginInstanceParameters[$(this).attr('id')] = $(this).val();
 		        });
 		        $.ajax({
 			        type: "POST",
 			        url: "rest/db_instance/"+dbId,
-			        data: "dbGroupId=" + dbGroupId + "&dbHost=" + dbHost + "&dbPort=" + dbPort + "&dbSid=" + dbSid + "&pluginInstanceParameters="+JSON.stringify(pluginInstanceParameters)+"&_method=POST",
+			        data: "dbPluginType=" + dbPluginType + "&dbHost=" + dbHost + "&dbPort=" + dbPort + "&dbSid=" + dbSid + "&pluginInstanceParameters="+JSON.stringify(pluginInstanceParameters)+"&_method=POST",
 			        success: function(response){
 			        	closeEditInstanceWindow();
 			        	getInstancesPageNumber(currentManageInstancePage);
@@ -194,11 +191,14 @@
 		        $("#new_group_lob_select :selected").each(function(){
 		        	dbLobList.push($(this).val()); 
 		        });
-		        
+		        var dbInstancesJson = {};
+		        $("#new_group_selected_db_instances li").each(function(){
+		        	dbInstancesJson[$(this).attr('id')] = $(this).children(".isDeployable").is(":checked");
+		        })
 		        $.ajax({
 			        type: "POST",
 			        url: "rest/db_group/"+dbGroupId,
-			        data: "dbTypeId=" + dbTypeId + "&dbLobList=["+ dbLobList +"]&_method=PUT",
+			        data: "dbTypeId=" + dbTypeId + "&dbLobList=["+ dbLobList +"]&dbInstances="+JSON.stringify(dbInstancesJson)+"&_method=PUT",
 			        success: function(response){
 				        // we have the response
 				        $('#info').html(response);
@@ -229,17 +229,16 @@
 			        }
 		        });
 	        }
-	        function refreshAvailableDBIds() {
+	        function refreshAvailableDBGroups() {
 	        	
 		        $.ajax({
 			        type: "POST",
-			        url: "rest/db_instance/",
+			        url: "rest/db_group/",
 			        data: "_method=GET"+"&dbTypeId="+$("#new_schmea_type_select option:selected").text(),
 			        success: function(response){
-			        	var dbIds = JSON.parse(response);
-			        	console.log(dbIds);
-			        	$("#new_schema_deployable_select").empty();
-			        	$.each(dbIds,function(index,value){$("#new_schema_deployable_select").append('<option val="'+value+'">'+value+'</option>');});
+			        	var dbGroupIds = JSON.parse(response);
+			        	$("#new_schema_db_groups_select").empty();
+			        	$.each(dbGroupIds,function(index,value){$("#new_schema_db_groups_select").append('<option val="'+value+'">'+value+'</option>');});
 			        },
 			        error: function(e){
 			        	$('#info').html("error");
@@ -251,14 +250,14 @@
 		        var dbSchemaId = $('#new_schema_id_input').val();
 		        var dbSchemaName = $('#new_schema_name_input').val();
 		        var dbTypeId = $('#new_schmea_type_select').val();
-		        var dbDeployableList = [];
-		        $("#new_schema_deployable_select :selected").each(function(){
-		        	dbDeployableList.push('"'+$(this).val()+'"'); 
+		        var dbGroupList = [];
+		        $("#new_schema_db_groups_select :selected").each(function(){
+		        	dbGroupList.push('"'+$(this).val()+'"'); 
 		        });
 		        $.ajax({
 			        type: "POST",
 			        url: "rest/db_schema/"+dbSchemaId,
-			        data: "dbTypeId=" + dbTypeId + "&dbDeployableList=["+ dbDeployableList +"]&schemaName="+dbSchemaName+"&_method=PUT",
+			        data: "dbTypeId=" + dbTypeId + "&dbGroupList=["+ dbGroupList +"]&schemaName="+dbSchemaName+"&_method=PUT",
 			        success: function(response){
 			        	getSchemasPageNumber(currentManageSchemaPage);
 			        },
@@ -361,7 +360,7 @@
         	
         	function setNewInstancePluginTypeParametersInput(){
         		$('#create_db_instance_div div').each(function(){
-        			if (this.id == $('#create_db_instance_div #group_select :selected').attr('dbPluginType')+"_InstanceParameters"){
+        			if (this.id == $('#create_db_instance_div #db_plugin_type_select :selected').val()+"_InstanceParameters"){
         				this.style.display = "block";
         			} 
         			else{
@@ -371,7 +370,7 @@
         	}
         	function setEditInstancePluginTypeParametersInput(){
         		$('#edit_db_instance_div div').each(function(){
-        			if (this.id == $('#edit_db_instance_div #group_select :selected').attr('dbPluginType')+"_InstanceParameters"){
+        			if (this.id == $('#edit_db_instance_div #db_plugin_type_select :selected').val()+"_InstanceParameters"){
         				this.style.display = "block";
         			} 
         			else{
@@ -382,13 +381,12 @@
         	function setEditInstanceValues(dbId){
         		for (var i in instanceTableValuesJson){
         			if (dbId == instanceTableValuesJson[i].dbId){
-        				$('#edit_db_instance_div #group_select').val(instanceTableValuesJson[i].dbGroupId);
+        				$('#edit_db_instance_div #db_plugin_type_select').val(instanceTableValuesJson[i].dbPluginType);
         				$('#edit_db_instance_div #host').val(instanceTableValuesJson[i].dbHost);
         				$('#edit_db_instance_div #port').val(instanceTableValuesJson[i].dbPort);
-        				$('#edit_db_instance_div #sid').val(instanceTableValuesJson[i].dbSid);
         				$('#edit_db_instance_div #dbid').val(dbId);
         				$.each((instanceTableValuesJson[i].pluginInstanceParameters),function(key,value){
-        					$('#edit_db_instance_div #'+$('#edit_db_instance_div #group_select :selected').attr('dbPluginType')+"_InstanceParameters"+' #'+key).val(value);
+        					$('#edit_db_instance_div #'+$('#edit_db_instance_div #db_plugin_type_select :selected').val()+"_InstanceParameters"+' #'+key).val(value);
         				});
         				console.log(instanceTableValuesJson[i].dbId);
         				console.log(instanceTableValuesJson[i].dbGroupId);
@@ -398,9 +396,33 @@
         			}
         		}
         		
-        		//$('#edit_db_instance_div #group_select') =
         	}
         	
+        	function addInstanceToGroup(select)
+        	{
+        		var $selected_instances = $("#new_group_selected_db_instances");
+        	   
+        	  if ($selected_instances.find('input[value=\'' + $(select).val() + '\']').length == 0)
+        	    $selected_instances.append('<li id=\''+ $(select).val() +'\'> <input type="checkbox" name="deployable" class="isDeployable">' +
+        	      $(select).val() +
+        	      '<img src=css/images/cross_bright.png onclick="$(this.parentNode).remove();"></li>');
+        	}
+			function refreshAvailableDBInstances() {
+		        $.ajax({
+			        type: "POST",
+			        url: "rest/db_instance",
+			        data: "_method=GET"+"&dbPluginType="+$("#new_group_type_select option:selected").attr("db_plugin_type"),
+			        success: function(response){
+			        	var dbInstanceIds = JSON.parse(response);
+			        	$("#new_group_instance_select").empty();
+			        	$("#new_group_selected_db_instances").empty();
+			        	$.each(dbInstanceIds,function(index,value){$("#new_group_instance_select").append('<option val="'+value+'">'+value+'</option>');});
+			        },
+			        error: function(e){
+			        	$('#info').html("error");
+			        }
+		        });
+	        }
         </script>
 </head>
 <body onload="load()">
@@ -429,10 +451,10 @@
             </div>
             <div id="database-types-div" style="display: block;">
                 
-                <input type="text" id="db_vendor" class="input_field" name="db_vendor" list="db_vendors"/>
-					<datalist id="db_vendors">
-					    <c:forEach items="${options.db_vendors}" var="dbVendor">
-					             <option value="${dbVendor}">${dbVendor}</option>
+                	<input type="text" id="db_plugin_type" class="input_field" name="db_plugin_types" list="db_plugin_types"/>
+					<datalist id="db_plugin_types">
+					    <c:forEach items="${options.db_plugin_types}" var="dbPluginType">
+					             <option value="${dbPluginType}">${dbPluginType}</option>
 					    </c:forEach>
 					</datalist>
 					<input type="text" id="db_role" class="input_field" name="db_role" list="db_roles"/>
@@ -448,7 +470,7 @@
 						<table id="types-table" class="table">
 			                <thead>
 			                    <tr>
-			                        <th>Database Vendor</th>
+			                        <th>Database Plugin Type</th>
 			                        <th>Database Role</th>
 			                        <th></th>
 			                    </tr>
@@ -456,7 +478,7 @@
 			                <tbody id="types-table-body">
 			                    <c:forEach items="${type_table_values}" var="tableRow">
 			                        <tr class="table_row">    
-			                            <td>${tableRow.db_vendor}</td>
+			                            <td>${tableRow.db_plugin_type}</td>
 			                            <td>${tableRow.db_role}</td>
 			                            <td><input type="button" value="Delete" onclick="doDeleteDBType('${tableRow.db_type_id}',this)"></td>
 			                        </tr>
@@ -469,15 +491,14 @@
 	           <div id="create_db_instance_div" class="ontopwindows">
 	           		<img src="css/images/closex.png" class="closewindowbutton" onclick='closeCreateInstanceWindow()'>
 	           		<div class="ontopwindow_heading">Create Database Instance</div>
-		           <select path="options" id="group_select" onchange="setNewInstancePluginTypeParametersInput()">
-		           		<c:forEach items="${group_table_values}" var="db_group">
-				    		<option id="${db_group.db_group_id}" value="${db_group.db_group_id}" dbPluginType="${db_group.db_plugin_type}">${db_group.db_group_id}</option>
+		           <select path="options" id="db_plugin_type_select" onchange="setNewInstancePluginTypeParametersInput()">
+		           		<c:forEach items="${options.db_plugin_types}" var="db_plugin_type">
+				    		<option id="${db_plugin_type}" value="${db_plugin_type}"">${db_plugin_type}</option>
 				    	</c:forEach>
 					</select>
 					<input type="text" id="dbid" name="dbid" placeholder="DB ID (usually host:port).." class="input_field"/>
 					<input type="text" id="host" name="host" placeholder="host..." class="input_field"/>
 					<input type="text" id="port" name="port" placeholder="port..."class="input_field"/>
-					<input type="text" id="sid" name="sid" placeholder="sid..." class="input_field"/>
 					<br/>
 					
 	    	     	<c:forEach items="${dbPluginsConfig}" var="pluginConfig">
@@ -494,14 +515,13 @@
 	           <div id="edit_db_instance_div" class="ontopwindows">
 	           		<img src="css/images/closex.png" class="closewindowbutton" onclick='closeEditInstanceWindow()'>
 	           		<div class="ontopwindow_heading">Edit Database Instance</div>
-		           <select path="options" id="group_select" onchange="setEditInstancePluginTypeParametersInput()">
-		           		<c:forEach items="${group_table_values}" var="db_group">
-				    		<option id="${db_group.db_group_id}" value="${db_group.db_group_id}" dbPluginType="${db_group.db_plugin_type}">${db_group.db_group_id}</option>
+		           <select path="options" id="db_plugin_type_select" onchange="setEditInstancePluginTypeParametersInput()">
+		           		<c:forEach items="${options.db_plugin_types}" var="db_plugin_type">
+				    		<option id="${db_plugin_type}" value="${db_plugin_type}" >${db_plugin_type}</option>
 				    	</c:forEach>
 					</select>
 					<input type="text" id="host" name="host" placeholder="host..." class="input_field"/>
 					<input type="text" id="port" name="port" placeholder="port..."class="input_field"/>
-					<input type="text" id="sid" name="sid" placeholder="sid..." class="input_field"/>
 					<input type="text" id="dbid" name="dbid" class="input_field" style="display: none;"/>
 					<br/>
 					
@@ -521,9 +541,16 @@
             </div>
             <div id="database-groups-div" style="display: none;">
            		<input type="text" id="new_group_id_input" name="new_group_id_input" class="input_field"/>
-				<form:select path="options" id="new_group_type_select">
-			    	<form:options items="${options.db_types}" />
+				<select id="new_group_type_select" onchange="refreshAvailableDBInstances()">
+			    	<c:forEach items="${type_table_values}" var="type">
+			    		<option id="${type.db_type_id}" db_plugin_type="${type.db_plugin_type}" >${type.db_type_id}</option>
+			    	</c:forEach>
+				</select>
+				<form:select path="options" id="new_group_instance_select" onchange="addInstanceToGroup(this);">
+			    	<form:options items="${options.db_instance_ids}" />
 				</form:select>
+				<ul id="new_group_selected_db_instances" class="selected_options">
+				</ul>
 				<form:select multiple="true" path="options" id="new_group_lob_select">
 		    		<form:options items="${options.lobs}" />
 				</form:select>
@@ -536,17 +563,34 @@
                     <tr>
                         <th>Database Group Id</th>
                         <th>Database Type</th>
+                        <th>Database Instances</th>
                         <th>Lobs</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody id="groups-table-body">
-                    <c:forEach items="${group_table_values}" var="tableRow">
+                    <c:forEach items="${group_table_values}" var="dbGroup">
                         <tr class="table_row">    
-                            <td>${tableRow.db_group_id}</td>
-                            <td>${tableRow.db_type_id}</td>
-                            <td>${tableRow.db_group_lob_mapping}</td>
-                            <td><input type="button" value="Delete" onclick="deleteDBGroup('${tableRow.db_group_id}',this)"></td>
+                            <td>${dbGroup.dbGroupId}</td>
+                            <td>${dbGroup.dbTypeId}</td>
+                            <td>
+                            	<ul>
+		                            <c:forEach items="${dbGroup.databaseInstances}" var="dbInstance">
+							             <li value="${dbInstance.key}">
+							             	${dbInstance.key}
+							             	<c:if test="${dbInstance.value ==true}" >(D)</c:if>
+							             </li>
+							    	</c:forEach>
+						    	</ul>
+                            </td>
+                            <td>
+                            	<ul>
+		                            <c:forEach items="${dbGroup.lobs}" var="lobs">
+							             <li value="${lobs}">${lobs}</li>
+							    	</c:forEach>
+						    	</ul>
+					    	</td>
+                            <td><input type="button" value="Delete" onclick="deleteDBGroup('${dbGroup.dbGroupId}',this)"></td>
                         </tr>
                     </c:forEach>
                 </tbody>
@@ -555,10 +599,10 @@
 			<div id="database-schemas-div" style="display: none;">
 				<input type="text" id="new_schema_id_input" name="new_schema_id_input" class="input_field"/>
 				<input type="text" id="new_schema_name_input" name="new_schema_name_input" class="input_field"/>
-				<form:select path="options" id="new_schmea_type_select" onchange="refreshAvailableDBIds()">
+				<form:select path="options" id="new_schmea_type_select" onchange="refreshAvailableDBGroups()">
 			    	<form:options items="${options.db_types}" />
 				</form:select>
-				<form:select multiple="true" path="options" id="new_schema_deployable_select">
+				<form:select multiple="true" path="options" id="new_schema_db_groups_select">
 		    		<form:options />
 				</form:select>
 				<br/>

@@ -25,6 +25,15 @@ public abstract class DBService {
 	        ServiceLoader<DBService> dbServices = ServiceLoader.load(DBService.class);
 	        return dbServices; 
 	    }
+	 	
+	 	public static ArrayList<String> getAvailableDbPluginTypeNames(){
+	 		ServiceLoader<DBService> dbServices = ServiceLoader.load(DBService.class);
+	 		ArrayList<String> availableDbPluginTypeName = new ArrayList<String>();
+	 		for (DBService dbService : dbServices){
+	 			availableDbPluginTypeName.add(dbService.getDBType());
+	 		}
+	 		return availableDbPluginTypeName; 
+	 	}
 
 	 	public abstract ArrayList<String> getGlobalParameterNames();
 	 	

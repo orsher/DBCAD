@@ -1,21 +1,19 @@
 package dbcad;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 
 public class DBSchema {
 	private String schemaId;
-	private String schemaName;
 	private String dbTypeId;
-	private ArrayList<String> deployableInstances;
+	private HashMap<String,String> databaseGroups;
 	
 	
 	
-	public DBSchema(String schemaId, String schemaName, String dbTypeId,
-			ArrayList<String> deployableInstances) {
+	public DBSchema(String schemaId, String dbTypeId,
+			HashMap<String,String> databaseGroups) {
 		this.schemaId = schemaId;
-		this.schemaName = schemaName;
 		this.dbTypeId = dbTypeId;
-		this.deployableInstances = deployableInstances;
+		this.databaseGroups = databaseGroups;
 	}
 	
 	public String getSchemaId() {
@@ -24,23 +22,17 @@ public class DBSchema {
 	public void setSchemaId(String schemaId) {
 		this.schemaId = schemaId;
 	}
-	public String getSchemaName() {
-		return schemaName;
-	}
-	public void setSchemaName(String schemaName) {
-		this.schemaName = schemaName;
-	}
 	public String getDbTypeId() {
 		return dbTypeId;
 	}
 	public void setDbTypeId(String dbTypeId) {
 		this.dbTypeId = dbTypeId;
 	}
-	public ArrayList<String> getDeployableInstances() {
-		return deployableInstances;
+	public HashMap<String,String> getDatabaseGroups() {
+		return databaseGroups;
 	}
-	public void setDeployableInstances(ArrayList<String> deployableInstances) {
-		this.deployableInstances = deployableInstances;
+	public void setDatabaseGroups(HashMap<String,String> databaseGroups) {
+		this.databaseGroups = databaseGroups;
 	}
 	
 	

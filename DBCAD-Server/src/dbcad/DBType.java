@@ -1,13 +1,13 @@
 package dbcad;
 
 public class DBType {
-	private String dbVendor = null;
+	private String dbPluginType = null;
 	private String dbRole = null;
-	public String getDbVendor() {
-		return dbVendor;
+	public String getDbPluginType() {
+		return dbPluginType;
 	}
-	public void setDbVendor(String dbVendor) {
-		this.dbVendor = dbVendor;
+	public void setDbPluginType(String dbPluginType) {
+		this.dbPluginType = dbPluginType;
 	}
 	public String getDbRole() {
 		return dbRole;

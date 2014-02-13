@@ -503,3 +503,22 @@ body.loading .modal_text {
 	width: 5%;
 	height: 12%;
 }
+
+ul.selected_options {
+  list-style-type: none;
+  width: 15em;
+  margin: 0.3em 0;
+  padding: 0;
+}
+
+ul.selected_options li {
+  background: #ffe4b2;
+  margin: 1px;
+  padding: 0.1em 0.3em;
+  cursor: pointer; 
+  font-weight: bold;
+  border: solid 1px #cde;
+}
+ul.selected_options li img{
+	float: right;
+}

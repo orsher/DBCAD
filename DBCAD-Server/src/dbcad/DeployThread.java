@@ -35,7 +35,6 @@ public class DeployThread extends Thread {
 			if (!repHandler.isDbChangeDeployed(dbChangeId,lobId)){
 				repHandler.markDbChangeDeploymentStatus(dbChangeId, lobId, "Running");
 				String dbChangeScript = repHandler.getDatabaseChangeScript(dbChangeId);
-				String dbSchemaName = repHandler.getDatabaseChangeSchema(dbChangeId);
 				dbPluginType = repHandler.getDBPluginTypeForDbChange(dbChangeId);
 				DBService dbService = DBService.getDBService(dbPluginType);
 				HashMap<String,String> globalParameters=null;
@@ -45,10 +44,11 @@ public class DeployThread extends Thread {
 				} catch (UnknownHostException e) {
 					 e.printStackTrace();
 				}
-				ArrayList<DBInstance> deployableInstances = repHandler.getDeployableDatabaseInstancesForLobIdAndDbChange(dbChangeId,lobId);
+				HashMap<DBInstance,String> deployableInstancesAndSchemaNames = repHandler.getDeployableDatabaseInstancesAndSchemaNamesForLobIdAndDbChange(dbChangeId,lobId);
 				boolean isAllDeployedSuccessfully = true;
-				for (DBInstance deployableInstance : deployableInstances){
+				for (DBInstance deployableInstance : deployableInstancesAndSchemaNames.keySet()){
 					HashMap<String,HashMap<String,String>> parameterAttributes = dbService.getInstanceParameterAttributes();
+					String dbSchemaName = deployableInstancesAndSchemaNames.get(deployableInstance);
 					Cipher aes =null;
 					try{
 						aes = Cipher.getInstance("AES");

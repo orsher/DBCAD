@@ -6,9 +6,8 @@
             <thead>
                 <tr>
                     <th>Schema Id</th>
-                    <th>Schema Name</th>
                     <th>Database Type</th>
-                    <th>Deployables</th>
+                    <th>Database Groups</th>
                     <th></th>
                 </tr>
             </thead>
@@ -16,12 +15,11 @@
                 <c:forEach items="${schema_table_values}" var="tableRow">
                     <tr class="table_row">    
                         <td>${tableRow.schemaId}</td>
-                        <td>${tableRow.schemaName}</td>
                         <td>${tableRow.dbTypeId}</td>
                         <td>
                         	<ul>
-                          <c:forEach items="${tableRow.deployableInstances}" var="deployable_instance">
-                          	<li>	${deployable_instance} </li>
+                          <c:forEach items="${tableRow.databaseGroups}" var="database_groups">
+                          	<li>	${database_groups} </li>
                           </c:forEach>
                          </ul>
                         </td>

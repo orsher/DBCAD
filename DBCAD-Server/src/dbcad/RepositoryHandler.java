@@ -104,14 +104,14 @@ public class RepositoryHandler {
 		return databaseIds;
 	}
 	
-	protected ArrayList<String> getDatabaseIds(String dbTypeId){
+	protected ArrayList<String> getDatabaseInstanceIds(String dbPluginType){
 		ResultSet rs = null;
 		ArrayList<String> databaseIds = new ArrayList<String>();
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select db_id from database_instance di, database_groups dg where di.db_group_id = dg.db_group_id and dg.db_type_id=?");
-			preparedStatement.setString(1, dbTypeId);
+			PreparedStatement preparedStatement = conn.prepareStatement("select db_id from database_instance where db_plugin_type = ?");
+			preparedStatement.setString(1, dbPluginType);
 			rs = preparedStatement.executeQuery();
 			while (rs.next()){
 				databaseIds.add(rs.getString("db_id"));
@@ -126,6 +126,53 @@ public class RepositoryHandler {
 			System.out.println("Error: Could not close connection" );
 		}
 		return databaseIds;
+	}
+	
+	protected ArrayList<String> getDatabaseGroupIds(String dbTypeId){
+		ResultSet rs = null;
+		ArrayList<String> databaseGroups = new ArrayList<String>();
+		Connection conn=null;
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_group_id from database_groups where db_type_id=?");
+			preparedStatement.setString(1, dbTypeId);
+			rs = preparedStatement.executeQuery();
+			while (rs.next()){
+				databaseGroups.add(rs.getString("db_group_id"));
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
+		return databaseGroups;
+	}
+	
+	protected ArrayList<String> getDatabaseGroupIds(){
+		ResultSet rs = null;
+		ArrayList<String> databaseGroups = new ArrayList<String>();
+		Connection conn=null;
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_group_id from database_groups");
+			rs = preparedStatement.executeQuery();
+			while (rs.next()){
+				databaseGroups.add(rs.getString("db_group_id"));
+			}
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		try{
+			conn.close();
+		}
+		catch(Exception e){
+			System.out.println("Error: Could not close connection" );
+		}
+		return databaseGroups;
 	}
 	
 	protected ArrayList<String> getDatabaseVendors(){
@@ -234,7 +281,7 @@ public class RepositoryHandler {
 			while (rs.next()){
 				HashMap<String,String> dbType = new HashMap<String,String>();
 				dbType.put("db_type_id", rs.getString("db_type_id"));
-				dbType.put("db_vendor", rs.getString("db_vendor"));
+				dbType.put("db_plugin_type", rs.getString("db_vendor"));
 				dbType.put("db_role", rs.getString("db_role"));
 				databaseTypes.add(dbType);
 			}
@@ -304,36 +351,13 @@ public class RepositoryHandler {
 		}
 	}
 	
-	protected ArrayList<String> getDatabaseGroupIds(){
-		ResultSet rs = null;
-		ArrayList<String> databaseGroups = new ArrayList<String>();
-		Connection conn=null;
-		try{
-			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select distinct db_group_id from database_groups");
-			rs = preparedStatement.executeQuery();
-			while (rs.next()){
-				databaseGroups.add(rs.getString("db_group_id"));
-			}
-		}catch(Exception e){
-			e.printStackTrace();
-		}
-		try{
-			conn.close();
-		}
-		catch(Exception e){
-			System.out.println("Error: Could not close connection" );
-		}
-		return databaseGroups;
-	}
-	
 	protected ArrayList<DBInstance> getDatabaseInstances(String generalFilter, int offset, int bulkSize, AtomicInteger totalRowNumber){
 		ResultSet rs = null;
 		ArrayList<DBInstance> databaseInstances = new ArrayList<DBInstance>();
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_id, db_group_id,host,port,sid from database_instance limit ?,?");
+			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_id, host,port,db_plugin_type from database_instance limit ?,?");
 			preparedStatement.setInt(1, offset);
 			preparedStatement.setInt(2, bulkSize);
 			rs = preparedStatement.executeQuery();
@@ -350,12 +374,7 @@ public class RepositoryHandler {
 				while (innerRS.next()){
 					pluginInstanceParameters.put(innerRS.getString("parameter_name"), innerRS.getString("parameter_value"));
 				}
-				DBInstance dbInstance = new DBInstance(rs.getString("db_id"),rs.getString("db_group_id"),rs.getString("host"),rs.getInt("port"),rs.getString("sid"),pluginInstanceParameters);
-//				dbInstance.put("db_id", rs.getString("db_id"));
-//				dbInstance.put("db_group_id", rs.getString("db_group_id"));
-//				dbInstance.put("host", rs.getString("host"));
-//				dbInstance.put("port", Integer.toString(rs.getInt("port")));
-//				dbInstance.put("sid", rs.getString("sid"));
+				DBInstance dbInstance = new DBInstance(rs.getString("db_id"),rs.getString("db_plugin_type"),rs.getString("host"),rs.getInt("port"),pluginInstanceParameters);
 				databaseInstances.add(dbInstance);
 			}
 		}catch(Exception e){
@@ -370,16 +389,15 @@ public class RepositoryHandler {
 		return databaseInstances;
 	}
 
-	protected int addDatabaseInstance(String dbId,String db_group_id, String host, Integer port, String sid, HashMap<String, String> pluginInstanceParameters ){
+	protected int addDatabaseInstance(String dbId, String dbPluginType, String host, Integer port, HashMap<String, String> pluginInstanceParameters ){
 		Connection conn=null;
 	try{
 		conn = datasource.getConnection();
-		PreparedStatement preparedStatement = conn.prepareStatement("insert into database_instance (db_id,db_group_id,host,port,sid) values (?,?,?,?,?)");
+		PreparedStatement preparedStatement = conn.prepareStatement("insert into database_instance (db_id,host,port,db_plugin_type) values (?,?,?,?)");
 		preparedStatement.setString(1, dbId);
-		preparedStatement.setString(2, db_group_id);
-		preparedStatement.setString(3, host);
-		preparedStatement.setInt(4, port);
-		preparedStatement.setString(5, sid);
+		preparedStatement.setString(2, host);
+		preparedStatement.setInt(3, port);
+		preparedStatement.setString(4, dbPluginType);
 		int result = preparedStatement.executeUpdate();
 		preparedStatement =  conn.prepareStatement("insert into db_plugin_instance_parameters (db_id,parameter_name,parameter_value) values (?,?,?)");
 		preparedStatement.setString(1, dbId);
@@ -408,21 +426,17 @@ public class RepositoryHandler {
 	}
   }
 	
-	protected String saveDatabaseInstance(String dbId, String db_group_id, String host,Integer port, String sid, HashMap<String, String> pluginInstanceParameters ){
+	protected String saveDatabaseInstance(String dbId, String dbPluginType, String host,Integer port, HashMap<String, String> pluginInstanceParameters ){
 		Connection conn=null;
-		String newDbId = host+":"+port+":"+sid;
 	try{
 		conn = datasource.getConnection();
-		PreparedStatement preparedStatement = conn.prepareStatement("update database_instance set db_id=?,db_group_id=?,host=?,port=?,sid=? where db_id=?");
-		preparedStatement.setString(1, newDbId);
-		preparedStatement.setString(2, db_group_id);
-		preparedStatement.setString(3, host);
-		preparedStatement.setInt(4, port);
-		preparedStatement.setString(5, sid);
-		preparedStatement.setString(6, dbId);
+		PreparedStatement preparedStatement = conn.prepareStatement("update database_instance set host=?,port=? where db_id=?");
+		preparedStatement.setString(1, host);
+		preparedStatement.setInt(2, port);
+		preparedStatement.setString(3, dbId);
 		int result = preparedStatement.executeUpdate();
 		preparedStatement =  conn.prepareStatement("insert into db_plugin_instance_parameters (db_id,parameter_name,parameter_value) values (?,?,?) on duplicate key update parameter_value=?");
-		preparedStatement.setString(1, newDbId);
+		preparedStatement.setString(1, dbId);
 	    for (String key : pluginInstanceParameters.keySet()){
 	    	preparedStatement.setString(2, key);
 	    	preparedStatement.setString(3, pluginInstanceParameters.get(key));
@@ -435,7 +449,7 @@ public class RepositoryHandler {
 		catch(Exception e){
 			System.out.println("Error: Could not close connection" );
 		}
-		return (result > 0)  ? newDbId: "";
+		return (result > 0)  ? dbId:"";
 	}catch(Exception e){
 		try{
 			conn.close();
@@ -444,7 +458,7 @@ public class RepositoryHandler {
 			System.out.println("Error: Could not close connection" );
 		}
 		e.printStackTrace();
-		return newDbId;
+		return dbId;
 	}
   }
 	
@@ -610,31 +624,40 @@ public class RepositoryHandler {
 		return databaseTypesIds;
 	}
 
-	public ArrayList<HashMap<String, String>> getDatabaseGroups() {
+	public ArrayList<DBGroup> getDatabaseGroups() {
 		ResultSet rsGroups = null;
-		ResultSet rsLobs = null;
-		ArrayList<HashMap<String,String>> databaseGroups = new ArrayList<HashMap<String,String>>();
+		ArrayList<DBGroup> databaseGroups = new ArrayList<DBGroup>();
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select dg.db_group_id, dg.db_type_id,dt.db_vendor from database_groups dg, database_type dt where dg.db_type_id = dt.db_type_id");
+			PreparedStatement preparedStatement = conn.prepareStatement("select dg.db_group_id, dg.db_type_id,dt.db_vendor,dt.db_role from database_groups dg, database_type dt where dg.db_type_id = dt.db_type_id");
 			rsGroups = preparedStatement.executeQuery();
 			while (rsGroups.next()){
-				HashMap<String,String> dbGroup = new HashMap<String,String>();
-				dbGroup.put("db_group_id", rsGroups.getString("db_group_id"));
-				dbGroup.put("db_type_id", rsGroups.getString("db_type_id"));
-				dbGroup.put("db_plugin_type", rsGroups.getString("db_vendor"));
+				DBGroup dbGroup = new DBGroup();
+				dbGroup.setDbGroupId(rsGroups.getString("db_group_id"));
+				dbGroup.setDbTypeId(rsGroups.getString("db_type_id"));
+				dbGroup.setDbPluginType(rsGroups.getString("db_vendor"));
+				
 				PreparedStatement lobsPreparedStatement = conn.prepareStatement("select lob_id from lob_group_mapping where db_group_id=?");
 				lobsPreparedStatement.setString(1, rsGroups.getString("db_group_id"));
+				ResultSet rsLobs = null;
 				rsLobs = lobsPreparedStatement.executeQuery();
-				StringBuilder sb = new StringBuilder();
-				if (rsLobs.next()){	
-					sb.append(rsLobs.getString("lob_id"));
-				}
+				ArrayList<String> lobs = new ArrayList<String>();
 				while (rsLobs.next()){
-					sb.append(", "+rsLobs.getString("lob_id"));
+					lobs.add(rsLobs.getString("lob_id"));
 				}
-				dbGroup.put("db_group_lob_mapping", sb.toString());
+				dbGroup.setLobs(lobs);
+				
+				PreparedStatement instancesPreparedStatement = conn.prepareStatement("select db_id,deployable from database_group_instance_mapping where db_group_id=?");
+				instancesPreparedStatement.setString(1, rsGroups.getString("db_group_id"));
+				ResultSet rsInstances = null;
+				rsInstances = instancesPreparedStatement.executeQuery();
+				HashMap<String,Boolean> instances = new HashMap<String,Boolean>();
+				while (rsInstances.next()){
+					instances.put(rsInstances.getString("db_id"), rsInstances.getBoolean("deployable"));
+				}
+				dbGroup.setDatabaseInstances(instances);
+				
 				databaseGroups.add(dbGroup);
 			}
 		}catch(Exception e){
@@ -649,13 +672,14 @@ public class RepositoryHandler {
 		return databaseGroups;
 	}
 	
-	public int addDatabaseGroup(String dbGroupId, String dbTypeId) {
+	public int addDatabaseGroup(DBGroup dbGroup) {
 		Connection conn=null;
+		int returnCode=REP_OK;
 		try{
 			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into database_groups (db_group_id,db_type_id) values (?,?)");
-			preparedStatement.setString(1, dbGroupId);
-			preparedStatement.setString(2, dbTypeId);
+			preparedStatement.setString(1, dbGroup.getDbGroupId());
+			preparedStatement.setString(2, dbGroup.getDbTypeId());
 			preparedStatement.executeUpdate();
 			try{
 				conn.close();
@@ -663,7 +687,18 @@ public class RepositoryHandler {
 			catch(Exception e){
 				System.out.println("Error: Could not close connection" );
 			}
-			return 0;
+			
+			for (String lobId : dbGroup.getLobs()) {
+				if (addDatabaseGroupLobMapping(dbGroup.getDbGroupId(),lobId) != REP_OK){
+					returnCode = REP_ERR;
+				}
+			}
+			
+			HashMap<String,Boolean> dbInstances = dbGroup.getDatabaseInstances(); 
+			for (String dbInstanceId : dbInstances.keySet()){
+				addDatabaseGroupInstanceMapping(dbGroup.getDbGroupId(),dbInstanceId,dbInstances.get(dbInstanceId));
+			}
+			return returnCode;
 		}
 		catch(Exception e){
 			try{
@@ -673,7 +708,7 @@ public class RepositoryHandler {
 				System.out.println("Error: Could not close connection" );
 			}
 			e.printStackTrace();
-			return 1;
+			return REP_ERR;
 		}
 	}
 
@@ -718,7 +753,7 @@ public class RepositoryHandler {
 			catch(Exception e){
 				System.out.println("Error: Could not close connection" );
 			}
-			return 0;
+			return REP_OK;
 		}
 		catch(Exception e){
 			try{
@@ -728,9 +763,38 @@ public class RepositoryHandler {
 				System.out.println("Error: Could not close connection" );
 			}
 			e.printStackTrace();
-			return 1;
+			return REP_ERR;
 		}
 	}
+	public int addDatabaseGroupInstanceMapping(String dbGroupId, String dbInstanceId, Boolean isDeployable) {
+		Connection conn=null;
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into database_group_instance_mapping (db_group_id,db_id,deployable) values (?,?,?)");
+			preparedStatement.setString(1, dbGroupId);
+			preparedStatement.setString(2, dbInstanceId);
+			preparedStatement.setBoolean(3, isDeployable);
+			preparedStatement.executeUpdate();
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
+			return REP_OK;
+		}
+		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
+			e.printStackTrace();
+			return REP_ERR;
+		}
+	}
+	
 	
 	public ArrayList<HashMap<String, String>> getDatabaseChangeLobsStatus(String generalFilter, int offset, int bulkSize, AtomicInteger totalRowNumber) {
 		ResultSet rs = null;
@@ -793,7 +857,7 @@ public class RepositoryHandler {
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS schema_id, schema_name, db_type_id from db_schema limit ?,?");
+			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS schema_id, db_type_id from db_schema limit ?,?");
 			preparedStatement.setInt(1, offset);
 			preparedStatement.setInt(2, bulkSize);
 			rs = preparedStatement.executeQuery();
@@ -803,16 +867,16 @@ public class RepositoryHandler {
             	totalRowNumber.set(numRowsRs.getInt(1));
             }
             numRowsRs.close();
-			PreparedStatement deployablesPreparedStatement = conn.prepareStatement("select db_id from deployable_instance_schema where schema_id=?");
-			ResultSet deployablesRs = null;
+			PreparedStatement groupsPreparedStatement = conn.prepareStatement("select db_group_id, schema_name from group_schema_mapping where schema_id=?");
+			ResultSet groupsRs = null;
 			while (rs.next()){
-				deployablesPreparedStatement.setString(1, rs.getString("schema_id"));
-				deployablesRs = deployablesPreparedStatement.executeQuery();
-				ArrayList<String> deployableInstances = new ArrayList<String>();
-				while (deployablesRs.next()){
-					deployableInstances.add(deployablesRs.getString("db_id"));
+				groupsPreparedStatement.setString(1, rs.getString("schema_id"));
+				groupsRs = groupsPreparedStatement.executeQuery();
+				HashMap<String,String> databaseGroups = new HashMap<String,String>();
+				while (groupsRs.next()){
+					databaseGroups.put(groupsRs.getString("db_group_id"),groupsRs.getString("schema_name"));
 				}
-				DBSchema database_schema = new DBSchema(rs.getString("schema_id"),rs.getString("schema_name"),rs.getString("db_type_id"),deployableInstances);
+				DBSchema database_schema = new DBSchema(rs.getString("schema_id"),rs.getString("db_type_id"),databaseGroups);
 				databaseSchemas.add(database_schema);
 			}
 			rs.close();
@@ -828,15 +892,13 @@ public class RepositoryHandler {
 		return databaseSchemas;
 	}
 
-	public int addDatabaseSchema(String schemaId, String schemaName,
-			String dbTypeId) {
+	public int addDatabaseSchema(String schemaId, String dbTypeId) {
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_schema (schema_id,schema_name,db_type_id) values (?,?,?)");
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_schema (schema_id,db_type_id) values (?,?)");
 			preparedStatement.setString(1, schemaId);
-			preparedStatement.setString(2, schemaName);
-			preparedStatement.setString(3, dbTypeId);
+			preparedStatement.setString(2, dbTypeId);
 			preparedStatement.executeUpdate();
 			try{
 				conn.close();
@@ -858,13 +920,42 @@ public class RepositoryHandler {
 		}
 	}
 
-	public int addDeployableDBInstance(String schemaId, String dbId) {
+	/*public int addDeployableDBInstance(String schemaId, String dbId) {
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into deployable_instance_schema (db_id,schema_id) values (?,?)");
 			preparedStatement.setString(1, dbId);
 			preparedStatement.setString(2, schemaId);
+			preparedStatement.executeUpdate();
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
+			return 0;
+		}
+		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
+			e.printStackTrace();
+			return 1;
+		}
+	}*/
+	
+	public int addSchemaToDBGroup(String dbGroupId, String schemaId, String schemaName) {
+		Connection conn=null;
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into group_schema_mapping (db_group_id,schema_id,schema_name) values (?,?,?)");
+			preparedStatement.setString(1, dbGroupId);
+			preparedStatement.setString(2, schemaId);
+			preparedStatement.setString(3, schemaName);
 			preparedStatement.executeUpdate();
 			try{
 				conn.close();
@@ -1136,18 +1227,18 @@ public class RepositoryHandler {
 			return null;
 		}
 	}
-	public ArrayList<DBInstance> getDeployableDatabaseInstancesForLobIdAndDbChange(String dbChangeId,String lobId){
+	public HashMap<DBInstance,String> getDeployableDatabaseInstancesAndSchemaNamesForLobIdAndDbChange(String dbChangeId,String lobId){
 		Connection conn=null;
-		ArrayList<DBInstance> databaseInstances = new ArrayList<DBInstance>(); ;
+		HashMap<DBInstance,String> databaseInstances = new HashMap<DBInstance,String>(); ;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select  a.host, a.port, a.sid, a.db_id, a.db_group_id from( select di.db_id , di.host, di.port, di.sid , di.db_group_id from db_requests r ,  deployable_instance_schema dis,  database_instance di where r.schema_id = dis.schema_id and dis.db_id = di.db_id  and r.db_request_id = ?) a,  lob_group_mapping lgm where a.db_group_id = lgm.db_group_id and lgm.lob_id = ?");
-			preparedStatement.setString(1, dbChangeId);
-			preparedStatement.setString(2, lobId);
+			PreparedStatement preparedStatement = conn.prepareStatement("select dbi.host, dbi.port,dbi.db_plugin_type, dbi.db_id,lgm.db_group_id,gsm.schema_name from db_requests dbr, group_schema_mapping gsm, lob_group_mapping lgm, database_group_instance_mapping dgim, database_instance dbi where dbr.schema_id = gsm.schema_id and lgm.db_group_id=gsm.db_group_id and dgim.db_group_id = gsm.db_group_id and dbi.db_id = dgim.db_id and dgim.deployable = 1 and lgm.lob_id=? and dbr.db_request_id=?");
+			preparedStatement.setString(1, lobId);
+			preparedStatement.setString(2, dbChangeId);
 			ResultSet instanceRS = preparedStatement.executeQuery();
 			while (instanceRS.next()){
 				HashMap<String,String> pluginInstanceParameters = new HashMap<String,String>();
-				DBInstance dbInstance = new DBInstance(instanceRS.getString("db_id"),instanceRS.getString("db_group_id"),instanceRS.getString("host"),instanceRS.getInt("port"),instanceRS.getString("sid"),pluginInstanceParameters);		
+				DBInstance dbInstance = new DBInstance(instanceRS.getString("db_id"),instanceRS.getString("db_plugin_type"),instanceRS.getString("host"),instanceRS.getInt("port"),pluginInstanceParameters);		
 				PreparedStatement innerPS = conn.prepareStatement("select parameter_name, parameter_value from db_plugin_instance_parameters where db_id=?");
 				innerPS.setString(1,instanceRS.getString("db_id"));
 				ResultSet innerRS = innerPS.executeQuery();
@@ -1155,7 +1246,7 @@ public class RepositoryHandler {
 					pluginInstanceParameters.put(innerRS.getString("parameter_name"), innerRS.getString("parameter_value"));
 				}
 				
-				databaseInstances.add(dbInstance);
+				databaseInstances.put(dbInstance,instanceRS.getString("schema_name"));
 			}
 			try{
 				conn.close();
@@ -1211,9 +1302,9 @@ public class RepositoryHandler {
 		JSONObject deploymentLog = new JSONObject();
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select dl.db_id, dl.run_date, dl.log from database_groups dbg, database_instance dbi, lob_group_mapping lgm, deployment_log dl where dbg.db_group_id = dbi.db_group_id and dbg.db_group_id = lgm.db_group_id and dl.db_id = dbi.db_id and dl.db_request_id = ? and lgm.lob_id = ? order by dl.db_id, dl.run_date");
-			preparedStatement.setString(1, dbChangeId);
-			preparedStatement.setString(2, lobId);
+			PreparedStatement preparedStatement = conn.prepareStatement("select dl.db_id, dl.run_date, dl.log from deployment_log dl, database_group_instance_mapping dgim, lob_group_mapping lgm where dl.db_id=dgim.db_id and dgim.db_group_id =lgm.db_group_id and lgm.lob_id=? and dl.db_request_id=?");
+			preparedStatement.setString(1, lobId);
+			preparedStatement.setString(2, dbChangeId);
 			ResultSet rs = preparedStatement.executeQuery();
 			while (rs.next()){
 				JSONObject logRecord = new JSONObject();
@@ -1248,13 +1339,14 @@ public class RepositoryHandler {
 		}
 	}
 
-	public String getDatabaseChangeSchema(String dbChangeId) {
+	public String getDatabaseChangeSchema(String dbChangeId,String dbGroupId) {
 		Connection conn=null;
 		String schemaName = null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select schema_name from db_requests dbr, db_schema dbs where dbr.schema_id=dbs.schema_id and db_request_id=?");
+			PreparedStatement preparedStatement = conn.prepareStatement("select gsm.schema_name from db_requests dbr, db_schema dbs, group_schema_mapping gsm where dbr.schema_id=dbs.schema_id and dbs.schema_id=gsm.schema_id and db_request_id=? and gsm.db_group_id=?");
 			preparedStatement.setString(1, dbChangeId);
+			preparedStatement.setString(2, dbGroupId);
 			ResultSet rs = preparedStatement.executeQuery();
 			rs.next();
 			schemaName = rs.getString("schema_name");

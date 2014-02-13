@@ -6,10 +6,9 @@
 	                <thead>
 	                    <tr>
 	                    	<th>Database Id</th>
-	                        <th>Database Group Id</th>
+	                    	<th>Database Plugin Type</th>
 	                        <th>Database Host</th>
 	                        <th>Database Port</th>
-	                        <th>Database Sid</th>
 	                        <th>Plugin Instance Parameters</th>
 	                        <th></th>
 	                    </tr>

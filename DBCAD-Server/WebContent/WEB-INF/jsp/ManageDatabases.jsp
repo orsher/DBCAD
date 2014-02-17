@@ -9,9 +9,88 @@
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
         	var instanceTableValuesJson=${instance_table_values_json};
+        	var groupTableValuesJson=${group_table_values_json};
+        	var schemaTableValuesJson=${schema_table_values_json};
         	var currentManageSchemaPage=1;
         	var currentManageInstancePage=1;
+        	var currentManageGroupPage=1;
         	var instancesNumOfPages=${instancesNumOfPages};
+        	var groupsNumOfPages=${groupsNumOfPages};
+        	var schemasNumOfPages=${schemasNumOfPages};
+        	var groupsSearchFilter={};
+        	var instancesSearchFilter={};
+        	var schemasSearchFilter={};
+        	function fillDBGroupsTable(){
+        		$('#groups-table-body').empty();
+        		var retValue="";
+        		$.each(groupTableValuesJson, function(){
+        			retValue += '<tr class="table_row">'+
+        			'<td>'+this['dbGroupId']+'</td>'+
+                    '<td>'+this['dbTypeId']+'</td>'+
+                    '<td>'+
+                    '    <ul>';
+                    
+                    $.each(this['databaseInstances'],function(key,value){
+                    		retValue += '<li>'+key;
+                    		if (value == true){
+                    			retValue +='(D)';
+                    		}
+                    		retValue +='</li>';
+                    });
+                    
+                    retValue +='    </ul>'+
+                    '</td>';
+                    
+                    retValue += '<td>'+
+                    '    <ul>';
+                    
+                    $.each(this['lobs'],function(key,value){
+                		retValue += '<li value="'+value+'">'+value+'</li>';
+                	});
+                    
+                    retValue +='    </ul>'+
+                    '</td>'+
+                    '<td>'+
+                    '	<input type="button" value="Delete" onclick="deleteDBGroup('+this['dbGroupId']+',this)">'+
+                    '</td>'+
+                	'</tr>';
+        		});
+            	retValue += '<td colspan="5" style="text-align: center;">'+
+                '<ul id="pagination-flickr">';
+                
+                if (currentManageGroupPage == 1){
+                	retValue += '<li class="previous-off">� Previous</li>';
+                }
+                else{
+                	retValue +='<li class="previous" onclick="getGroupsPageNumber(';
+                	retValue += currentManageGroupPage-1;
+                	retValue +=')">� Previous</li>';
+                }
+                
+                for (var i=1;i<=groupsNumOfPages;i++){
+                	if (i == currentManageGroupPage){
+                		retValue += i;
+                	}
+                	else{
+                		retValue += '<li onclick="getGroupsPageNumber('+ i +')">'+ i +'</li>';
+                	}
+                	
+                }
+                
+                if (currentManageGroupPage == groupsNumOfPages){
+                	retValue += '<li class="next-off" >Next �</li>';	
+                }
+                else{
+                	var nextManageGroupPage = currentManageGroupPage+1;
+                	retValue +='<li class="next" onclick="getGroupsPageNumber('+ nextManageGroupPage +')">Next �</li>';
+                }
+                
+                retValue +='	</ul>'+
+        				   '</td>';
+        				   
+        		$('#groups-table-body').append(retValue);
+        	}
+        	
         	function fillInstancesTable(){
         		$('#instances-table-body').empty();
         		var retValue="";
@@ -35,8 +114,6 @@
                     '	<input type="button" value="Delete" onclick="doDeleteDBInstance(\''+this['dbId']+'\',this)">'+
                     '</td>'+
                 	'</tr>';
-                	
-        			console.log(this);
         		});
             	retValue += '<td colspan="5" style="text-align: center;">'+
                 '<ul id="pagination-flickr">';
@@ -72,6 +149,63 @@
         				   '</td>';
         				   
         		$('#instances-table-body').append(retValue);
+        	}
+        	
+        	function fillDBSchemasTable(){
+        		$('#schemas-table-body').empty();
+        		var retValue="";
+        		$.each(schemaTableValuesJson, function(){
+        			retValue += '<tr class="table_row">'+
+        			'<td>'+this['schemaId']+'</td>'+
+                    '<td>'+this['dbTypeId']+'</td>'+
+                    '<td>'+
+                    '    <ul>';
+                    
+                    $.each(this['databaseGroups'],function(key,value){
+                    		retValue += '<li>'+key+' = '+value+'</li>'
+                    });
+                    
+                    retValue +='    </ul>'+
+                    '</td>'+
+                    '<td>'+
+                    '	<input type="button" value="Delete" onclick="deleteDBSchema(\''+this['schemaId']+'\',this)">'+
+                    '</td>'+
+                	'</tr>';
+        		});
+            	retValue += '<td colspan="5" style="text-align: center;">'+
+                '<ul id="pagination-flickr">';
+                
+                if (currentManageSchemaPage == 1){
+                	retValue += '<li class="previous-off">� Previous</li>';
+                }
+                else{
+                	retValue +='<li class="previous" onclick="getSchemasPageNumber(';
+                	retValue += currentManageSchemaPage-1;
+                	retValue +=')">� Previous</li>';
+                }
+                
+                for (var i=1;i<=schemasNumOfPages;i++){
+                	if (i == currentManageSchemaPage){
+                		retValue += i;
+                	}
+                	else{
+                		retValue += '<li onclick="getSchemasPageNumber('+ i +')">'+ i +'</li>';
+                	}
+                	
+                }
+                
+                if (currentManageSchemaPage == schemasNumOfPages){
+                	retValue += '<li class="next-off" >Next �</li>';	
+                }
+                else{
+                	var nextManageSchemaPage = currentManageSchemaPage+1;
+                	retValue +='<li class="next" onclick="getSchemasPageNumber('+ nextManageSchemaPage +')">Next �</li>';
+                }
+                
+                retValue +='	</ul>'+
+        				   '</td>';
+        				   
+        		$('#schemas-table-body').append(retValue);
         	}
         	
 	        function addDbType() {
@@ -284,10 +418,13 @@
 		        $.ajax({
 			        type: "POST",
 			        url: "getDbSchemasTablePage",
-			        data: "page="+i,
+			        data: "page="+i+"&searchFilter="+JSON.stringify(schemasSearchFilter),
 			        success: function(response){
-			        	$('#schemas-table').replaceWith(response);
-			        	currentManageSchemaPage=i;
+			        	var jsonResponse = JSON.parse(response);
+			        	schemasNumOfPages = jsonResponse["schemasNumOfPages"];
+			        	currentManageSchemaPage= jsonResponse["schemasCurrentPage"];
+			        	schemaTableValuesJson = JSON.parse(jsonResponse["schemaTableValues"]);
+			        	fillDBSchemasTable();
 			        },
 			        error: function(e){
 			        	alert('Error: ' + e.responseText);
@@ -299,7 +436,7 @@
 		        $.ajax({
 			        type: "POST",
 			        url: "getDbInstancesTablePage",
-			        data: "page="+i,
+			        data: "page="+i+"&searchFilter="+JSON.stringify(instancesSearchFilter),
 			        success: function(response){
 			        	var jsonResponse = JSON.parse(response);
 			        	instancesNumOfPages = jsonResponse["instancesNumOfPages"];
@@ -312,6 +449,25 @@
 			        }
 		        });
 	        }
+	        
+	        function getGroupsPageNumber(i) {
+		        $.ajax({
+			        type: "POST",
+			        url: "getDbGroupsTablePage",
+			        data: "page="+i+"&searchFilter="+JSON.stringify(groupsSearchFilter),
+			        success: function(response){
+			        	var jsonResponse = JSON.parse(response);
+			        	groupsNumOfPages = jsonResponse["groupsNumOfPages"];
+			        	currentManageGroupPage= jsonResponse["groupsCurrentPage"];
+			        	groupTableValuesJson = JSON.parse(jsonResponse["groupTableValues"]);
+			        	fillDBGroupsTable();
+			        },
+			        error: function(e){
+			        	alert('Error: ' + e.responseText);
+			        }
+		        });
+	        }
+	        
 	        function addLobToList(){
 	        	$('#new_group_lob_select').append('<option value="'+$('#new_lob_id_input').val()+'">'+$('#new_lob_id_input').val()+'</option>');
 	        }
@@ -335,6 +491,8 @@
 	        {
 	        	$('#manage-databases-link').addClass("current");
 	        	fillInstancesTable();
+	        	fillDBGroupsTable();
+	        	fillDBSchemasTable();
 	        	$('#create_db_instance_div #host').keyup(function(){
 	        		$('#create_db_instance_div #dbid').val($('#create_db_instance_div #host').val()+":"+$('#create_db_instance_div #port').val());
 	        	});
@@ -349,6 +507,13 @@
         	function closeCreateInstanceWindow(){
        		 	$('#create_db_instance_div').removeClass("Display");
        		}
+        	function openCreateGroupWindow(){
+        		setNewInstancePluginTypeParametersInput();
+       		 	$('#create_db_group_div').addClass("Display");
+       		}
+        	function closeCreateGroupWindow(){
+       		 	$('#create_db_group_div').removeClass("Display");
+       		}
         	function openEditInstanceWindow(dbId){
         		setEditInstanceValues(dbId);
         		setEditInstancePluginTypeParametersInput();
@@ -357,7 +522,12 @@
         	function closeEditInstanceWindow(){
        		 	$('#edit_db_instance_div').removeClass("Display");
        		}
-        	
+        	function openCreateSchemaWindow(){
+       		 	$('#create_db_schema_div').addClass("Display");
+       		}
+        	function closeCreateSchemaWindow(){
+       		 	$('#create_db_schema_div').removeClass("Display");
+       		}
         	function setNewInstancePluginTypeParametersInput(){
         		$('#create_db_instance_div div').each(function(){
         			if (this.id == $('#create_db_instance_div #db_plugin_type_select :selected').val()+"_InstanceParameters"){
@@ -388,11 +558,6 @@
         				$.each((instanceTableValuesJson[i].pluginInstanceParameters),function(key,value){
         					$('#edit_db_instance_div #'+$('#edit_db_instance_div #db_plugin_type_select :selected').val()+"_InstanceParameters"+' #'+key).val(value);
         				});
-        				console.log(instanceTableValuesJson[i].dbId);
-        				console.log(instanceTableValuesJson[i].dbGroupId);
-        				console.log(instanceTableValuesJson[i].dbHost);
-        				console.log(instanceTableValuesJson[i].dbPort);
-        				console.log(instanceTableValuesJson[i].pluginInstanceParameters);
         			}
         		}
         		
@@ -422,6 +587,18 @@
 			        	$('#info').html("error");
 			        }
 		        });
+	        }
+			function filterDBGroups() {
+	        	groupsSearchFilter.generalFilter = $('#groupsGeneralFilterText').val();
+	        	getGroupsPageNumber(1);
+	        }
+			function filterDBInstances() {
+	        	instancesSearchFilter.generalFilter = $('#instancesGeneralFilterText').val();
+	        	getInstancesPageNumber(1);
+	        }
+			function filterDBSchemas() {
+	        	schemasSearchFilter.generalFilter = $('#schemasGeneralFilterText').val();
+	        	getSchemasPageNumber(1);
 	        }
         </script>
 </head>
@@ -537,27 +714,44 @@
 					<input type="button" value="Save" onclick="saveDbInstance()">
 	           </div>
 	           <input type="button" value="Add" onclick="openCreateInstanceWindow()">
+	           <div search_div>
+					Filter Database Instances:
+					<input type="text" id="instancesGeneralFilterText">
+					<input type="button" value="Search" onclick="filterDBInstances()">
+				</div>
 				<%@ include file="ManageDatabaseInstanceTable.jsp" %>
             </div>
             <div id="database-groups-div" style="display: none;">
-           		<input type="text" id="new_group_id_input" name="new_group_id_input" class="input_field"/>
-				<select id="new_group_type_select" onchange="refreshAvailableDBInstances()">
-			    	<c:forEach items="${type_table_values}" var="type">
-			    		<option id="${type.db_type_id}" db_plugin_type="${type.db_plugin_type}" >${type.db_type_id}</option>
-			    	</c:forEach>
-				</select>
-				<form:select path="options" id="new_group_instance_select" onchange="addInstanceToGroup(this);">
-			    	<form:options items="${options.db_instance_ids}" />
-				</form:select>
-				<ul id="new_group_selected_db_instances" class="selected_options">
-				</ul>
-				<form:select multiple="true" path="options" id="new_group_lob_select">
-		    		<form:options items="${options.lobs}" />
-				</form:select>
-				<input type="text" id="new_lob_id_input" name="new_lob_id_input" class="input_field"/>
-				<input type="button" value="Add lob to list" onclick="addLobToList()">
-				<br/>
-				<input type="button" value="Add" onclick="addDbGroup()">
+            	<input type="button" value="Add" onclick="openCreateGroupWindow()">
+            	<div search_div>
+					Filter Database Groups:
+					<input type="text" id="groupsGeneralFilterText">
+					<input type="button" value="Search" onclick="filterDBGroups()">
+				</div>
+            	<div id="create_db_group_div" class="ontopwindows">
+	           		<img src="css/images/closex.png" class="closewindowbutton" onclick='closeCreateGroupWindow()'>
+	           		<div class="ontopwindow_heading">Create Database Group</div>
+		           <input type="text" id="new_group_id_input" name="new_group_id_input" class="input_field"/>
+					<select id="new_group_type_select" onchange="refreshAvailableDBInstances()">
+				    	<c:forEach items="${type_table_values}" var="type">
+				    		<option id="${type.db_type_id}" db_plugin_type="${type.db_plugin_type}" >${type.db_type_id}</option>
+				    	</c:forEach>
+					</select>
+					<form:select path="options" id="new_group_instance_select" onchange="addInstanceToGroup(this);">
+				    	<form:options items="${options.db_instance_ids}" />
+					</form:select>
+					<ul id="new_group_selected_db_instances" class="selected_options">
+					</ul>
+					<form:select multiple="true" path="options" id="new_group_lob_select">
+			    		<form:options items="${options.lobs}" />
+					</form:select>
+					<input type="text" id="new_lob_id_input" name="new_lob_id_input" class="input_field"/>
+					<input type="button" value="Add lob to list" onclick="addLobToList()">
+					<br/>
+					<input type="button" value="Add" onclick="addDbGroup()">
+	           	</div>
+	           	
+           		
 				<table id="groups-table" class="table">
                 <thead>
                     <tr>
@@ -569,45 +763,56 @@
                     </tr>
                 </thead>
                 <tbody id="groups-table-body">
-                    <c:forEach items="${group_table_values}" var="dbGroup">
-                        <tr class="table_row">    
-                            <td>${dbGroup.dbGroupId}</td>
-                            <td>${dbGroup.dbTypeId}</td>
-                            <td>
-                            	<ul>
-		                            <c:forEach items="${dbGroup.databaseInstances}" var="dbInstance">
-							             <li value="${dbInstance.key}">
-							             	${dbInstance.key}
-							             	<c:if test="${dbInstance.value ==true}" >(D)</c:if>
-							             </li>
-							    	</c:forEach>
-						    	</ul>
-                            </td>
-                            <td>
-                            	<ul>
-		                            <c:forEach items="${dbGroup.lobs}" var="lobs">
-							             <li value="${lobs}">${lobs}</li>
-							    	</c:forEach>
-						    	</ul>
-					    	</td>
-                            <td><input type="button" value="Delete" onclick="deleteDBGroup('${dbGroup.dbGroupId}',this)"></td>
-                        </tr>
-                    </c:forEach>
+<%--                     <c:forEach items="${group_table_values}" var="dbGroup"> --%>
+<!--                         <tr class="table_row">     -->
+<%--                             <td>${dbGroup.dbGroupId}</td> --%>
+<%--                             <td>${dbGroup.dbTypeId}</td> --%>
+<!--                             <td> -->
+<!--                             	<ul> -->
+<%-- 		                            <c:forEach items="${dbGroup.databaseInstances}" var="dbInstance"> --%>
+<%-- 							             <li value="${dbInstance.key}"> --%>
+<%-- 							             	${dbInstance.key} --%>
+<%-- 							             	<c:if test="${dbInstance.value ==true}" >(D)</c:if> --%>
+<!-- 							             </li> -->
+<%-- 							    	</c:forEach> --%>
+<!-- 						    	</ul> -->
+<!--                             </td> -->
+<!--                             <td> -->
+<!--                             	<ul> -->
+<%-- 		                            <c:forEach items="${dbGroup.lobs}" var="lobs"> --%>
+<%-- 							             <li value="${lobs}">${lobs}</li> --%>
+<%-- 							    	</c:forEach> --%>
+<!-- 						    	</ul> -->
+<!-- 					    	</td> -->
+<%--                             <td><input type="button" value="Delete" onclick="deleteDBGroup('${dbGroup.dbGroupId}',this)"></td> --%>
+<!--                         </tr> -->
+<%--                     </c:forEach> --%>
                 </tbody>
             </table>
             </div>
 			<div id="database-schemas-div" style="display: none;">
-				<input type="text" id="new_schema_id_input" name="new_schema_id_input" class="input_field"/>
-				<input type="text" id="new_schema_name_input" name="new_schema_name_input" class="input_field"/>
-				<form:select path="options" id="new_schmea_type_select" onchange="refreshAvailableDBGroups()">
-			    	<form:options items="${options.db_types}" />
-				</form:select>
-				<form:select multiple="true" path="options" id="new_schema_db_groups_select">
-		    		<form:options />
-				</form:select>
-				<br/>
-				<input type="button" value="Add" onclick="addDbSchema()">
-
+				
+				<input type="button" value="Add" onclick="openCreateSchemaWindow()">
+            	<div search_div>
+					Filter Database Schemas:
+					<input type="text" id="schemasGeneralFilterText">
+					<input type="button" value="Search" onclick="filterDBSchemas()">
+				</div>
+				
+				<div id="create_db_schema_div" class="ontopwindows">
+	           		<img src="css/images/closex.png" class="closewindowbutton" onclick='closeCreateSchemaWindow()'>
+	           		<div class="ontopwindow_heading">Create Database Schema</div>
+		           	<input type="text" id="new_schema_id_input" name="new_schema_id_input" class="input_field"/>
+					<input type="text" id="new_schema_name_input" name="new_schema_name_input" class="input_field"/>
+					<form:select path="options" id="new_schmea_type_select" onchange="refreshAvailableDBGroups()">
+				    	<form:options items="${options.db_types}" />
+					</form:select>
+					<form:select multiple="true" path="options" id="new_schema_db_groups_select">
+			    		<form:options />
+					</form:select>
+					<br/>
+					<input type="button" value="Add" onclick="addDbSchema()">
+	           	</div>
 
 				<%@ include file="ManageDatabaseSchemaTable.jsp" %>
             </div>

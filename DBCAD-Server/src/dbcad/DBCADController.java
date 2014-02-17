@@ -80,7 +80,8 @@ public class DBCADController {
 		typeTableValues = repHandler.getDatabaseTypes();
 		AtomicInteger instancesTableTotalNumberOfRows = new AtomicInteger();
 		instanceTableValues = repHandler.getDatabaseInstances(null,0,TABLE_MAX_ROWS,instancesTableTotalNumberOfRows);
-		groupTableValues = repHandler.getDatabaseGroups();
+		AtomicInteger groupsTableTotalNumberOfRows = new AtomicInteger();
+		groupTableValues = repHandler.getDatabaseGroups(null,0,TABLE_MAX_ROWS,groupsTableTotalNumberOfRows);
 		AtomicInteger schemasTableTotalNumberOfRows = new AtomicInteger();
 		schemaTableValues = repHandler.getDatabaseSchemas(null,0,TABLE_MAX_ROWS,schemasTableTotalNumberOfRows);
 		mav.addObject("options", options);
@@ -90,7 +91,11 @@ public class DBCADController {
 		mav.addObject("instancesNumOfPages",Math.ceil(1.0*instancesTableTotalNumberOfRows.intValue()/TABLE_MAX_ROWS));
 		mav.addObject("instancesCurrentPage",1);
 		mav.addObject("group_table_values", groupTableValues);
+		mav.addObject("group_table_values_json", gson.toJson(groupTableValues));
+		mav.addObject("groupsNumOfPages", Math.ceil(1.0*groupsTableTotalNumberOfRows.intValue()/TABLE_MAX_ROWS));
+		mav.addObject("groupsCurrentPage", 1);
 		mav.addObject("schema_table_values", schemaTableValues);
+		mav.addObject("schema_table_values_json", gson.toJson(schemaTableValues));
 		mav.addObject("schemasNumOfPages",Math.ceil(1.0*schemasTableTotalNumberOfRows.intValue()/TABLE_MAX_ROWS));
 		mav.addObject("schemasCurrentPage",1);
 		mav.addObject("dbPluginsConfig",getDBPluginsConfig());
@@ -123,13 +128,16 @@ public class DBCADController {
 	}
 	
 	@RequestMapping(value = "/getDbSchemasTablePage", method = RequestMethod.POST)
-	public ModelAndView getDBSchemasTablePage(@RequestParam(value = "page") int page,@RequestParam(value = "searchFilter", defaultValue = "{}") JSONObject searchFilterJSON) {
-		HashMap<String, ArrayList<String>> options;
+	public @ResponseBody String getDBSchemasTablePage(@RequestParam(value = "page") int page,@RequestParam(value = "searchFilter", defaultValue = "{}") JSONObject searchFilterJSON) {
+		Gson gson = new Gson();
+		JSONObject jsonResponse = new JSONObject();
 		ArrayList<DBSchema> dbSchemasTableValues;
 		AtomicInteger totalNumberOfRows = new AtomicInteger();
 		dbSchemasTableValues= repHandler.getDatabaseSchemas(searchFilterJSON.isNull("generalFilter") ? null : searchFilterJSON.getString("generalFilter"),(page-1)*TABLE_MAX_ROWS, TABLE_MAX_ROWS,totalNumberOfRows);
-		options = new HashMap<String, ArrayList<String>>();
-		return new ModelAndView("ManageDatabaseSchemaTable", "options", options).addObject("schema_table_values",dbSchemasTableValues).addObject("schemasNumOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("schemasCurrentPage",page);
+		jsonResponse.put("schemaTableValues", gson.toJson(dbSchemasTableValues));
+		jsonResponse.put("schemasNumOfPages", Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS));
+		jsonResponse.put("schemasCurrentPage",page);
+		return jsonResponse.toString();
 	}
 	
 	@RequestMapping(value = "/getDbInstancesTablePage", method = RequestMethod.POST)
@@ -142,6 +150,19 @@ public class DBCADController {
 		jsonResponse.put("instanceTableValues", gson.toJson(dbInstancesTableValues));
 		jsonResponse.put("instancesNumOfPages", Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS));
 		jsonResponse.put("instancesCurrentPage",page);
+		return jsonResponse.toString();
+	}
+	
+	@RequestMapping(value = "/getDbGroupsTablePage", method = RequestMethod.POST)
+	public @ResponseBody String getDBGroupsTablePage(@RequestParam(value = "page") int page,@RequestParam(value = "searchFilter", defaultValue = "{}") JSONObject searchFilterJSON) {
+		Gson gson = new Gson();
+		JSONObject jsonResponse = new JSONObject();
+		ArrayList<DBGroup> dbGroupsTableValues;
+		AtomicInteger totalNumberOfRows = new AtomicInteger();
+		dbGroupsTableValues= repHandler.getDatabaseGroups(searchFilterJSON.isNull("generalFilter") ? null : searchFilterJSON.getString("generalFilter"),(page-1)*TABLE_MAX_ROWS, TABLE_MAX_ROWS,totalNumberOfRows);
+		jsonResponse.put("groupTableValues", gson.toJson(dbGroupsTableValues));
+		jsonResponse.put("groupsNumOfPages", Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS));
+		jsonResponse.put("groupsCurrentPage",page);
 		return jsonResponse.toString();
 	}
 

@@ -12,7 +12,7 @@
                 </tr>
             </thead>
             <tbody id="schemas-table-body">
-                <c:forEach items="${schema_table_values}" var="tableRow">
+<%--                 <c:forEach items="${schema_table_values}" var="tableRow">
                     <tr class="table_row">    
                         <td>${tableRow.schemaId}</td>
                         <td>${tableRow.dbTypeId}</td>
@@ -56,6 +56,6 @@
 		                    	</c:choose>
 				            	
 				            </ul>
-		            	</td>
+		            	</td> --%>
             </tbody>
         </table>

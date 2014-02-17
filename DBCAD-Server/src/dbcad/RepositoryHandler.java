@@ -356,10 +356,22 @@ public class RepositoryHandler {
 		ArrayList<DBInstance> databaseInstances = new ArrayList<DBInstance>();
 		Connection conn=null;
 		try{
+			PreparedStatement preparedStatement;
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_id, host,port,db_plugin_type from database_instance limit ?,?");
-			preparedStatement.setInt(1, offset);
-			preparedStatement.setInt(2, bulkSize);
+			if (generalFilter == null || generalFilter.equals("")){
+				preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_id, host,port,db_plugin_type from database_instance limit ?,?");
+				preparedStatement.setInt(1, offset);
+				preparedStatement.setInt(2, bulkSize);
+			}
+			else{
+				preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS db_id, host,port,db_plugin_type from database_instance where db_id like ? or host like ? or port like ? or db_plugin_type like ? limit ?,?");
+				preparedStatement.setString(1, "%"+generalFilter+"%");
+				preparedStatement.setString(2, "%"+generalFilter+"%");
+				preparedStatement.setString(3, "%"+generalFilter+"%");
+				preparedStatement.setString(4, "%"+generalFilter+"%");
+				preparedStatement.setInt(5, offset);
+				preparedStatement.setInt(6, bulkSize);
+			}
 			rs = preparedStatement.executeQuery();
 			Statement stmt= conn.createStatement();
 			ResultSet numRowsRs = stmt.executeQuery("SELECT FOUND_ROWS()");
@@ -624,14 +636,33 @@ public class RepositoryHandler {
 		return databaseTypesIds;
 	}
 
-	public ArrayList<DBGroup> getDatabaseGroups() {
+	public ArrayList<DBGroup> getDatabaseGroups(String generalFilter, int offset, int bulkSize, AtomicInteger totalRowNumber) {
 		ResultSet rsGroups = null;
 		ArrayList<DBGroup> databaseGroups = new ArrayList<DBGroup>();
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select dg.db_group_id, dg.db_type_id,dt.db_vendor,dt.db_role from database_groups dg, database_type dt where dg.db_type_id = dt.db_type_id");
+			PreparedStatement preparedStatement;
+			if (generalFilter == null || generalFilter.equals("")){
+				preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS dg.db_group_id, dg.db_type_id,dt.db_vendor,dt.db_role from database_groups dg, database_type dt where dg.db_type_id = dt.db_type_id limit ?,?");
+				preparedStatement.setInt(1, offset);
+				preparedStatement.setInt(2, bulkSize);
+			}
+			else{
+				preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS dg.db_group_id, dg.db_type_id,dt.db_vendor,dt.db_role from database_groups dg, database_type dt where dg.db_type_id = dt.db_type_id and (lower(dg.db_group_id) like lower(?) or lower(dg.db_type_id) like lower(?) or lower(dt.db_vendor) like lower(?) or lower(dt.db_role) like lower(?) ) limit ?,?");
+				preparedStatement.setString(1, "%"+generalFilter+"%");
+				preparedStatement.setString(2, "%"+generalFilter+"%");
+				preparedStatement.setString(3, "%"+generalFilter+"%");
+				preparedStatement.setString(4, "%"+generalFilter+"%");
+				preparedStatement.setInt(5, offset);
+				preparedStatement.setInt(6, bulkSize);
+			}
 			rsGroups = preparedStatement.executeQuery();
+			Statement stmt= conn.createStatement();
+			ResultSet numRowsRs = stmt.executeQuery("SELECT FOUND_ROWS()");
+            if(numRowsRs.next()){
+            	totalRowNumber.set(numRowsRs.getInt(1));
+            }
 			while (rsGroups.next()){
 				DBGroup dbGroup = new DBGroup();
 				dbGroup.setDbGroupId(rsGroups.getString("db_group_id"));
@@ -856,10 +887,20 @@ public class RepositoryHandler {
 		ArrayList<DBSchema> databaseSchemas = new ArrayList<DBSchema>();
 		Connection conn=null;
 		try{
+			PreparedStatement preparedStatement;
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS schema_id, db_type_id from db_schema limit ?,?");
-			preparedStatement.setInt(1, offset);
-			preparedStatement.setInt(2, bulkSize);
+			if (generalFilter == null || generalFilter.equals("")){
+				preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS schema_id, db_type_id from db_schema limit ?,?");
+				preparedStatement.setInt(1, offset);
+				preparedStatement.setInt(2, bulkSize);
+			}
+			else{
+				preparedStatement = conn.prepareStatement("select SQL_CALC_FOUND_ROWS schema_id, db_type_id from db_schema where schema_id like ? or db_type_id like ? limit ?,?");
+				preparedStatement.setString(1, "%"+generalFilter+"%");
+				preparedStatement.setString(2, "%"+generalFilter+"%");
+				preparedStatement.setInt(3, offset);
+				preparedStatement.setInt(4, bulkSize);
+			}
 			rs = preparedStatement.executeQuery();
 			Statement stmt= conn.createStatement();
 			ResultSet numRowsRs = stmt.executeQuery("SELECT FOUND_ROWS()");

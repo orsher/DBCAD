@@ -522,3 +522,7 @@ ul.selected_options li {
 ul.selected_options li img{
 	float: right;
 }
+
+div#login_logout {
+	float: right;
+}

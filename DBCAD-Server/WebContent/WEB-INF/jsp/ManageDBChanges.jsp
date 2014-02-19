@@ -2,6 +2,7 @@
 <%@taglib uri="http://www.springframework.org/tags/form" prefix="form"%>
 <%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c"%>
 <%@ taglib prefix='fn' uri='http://java.sun.com/jsp/jstl/functions' %>
+<%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <html>
 <head>
     <title>Add Database Types</title>
@@ -171,10 +172,12 @@
 </head>
 <body onload="load()">
 <%@ include file="BodyHeader.jsp" %>
+<sec:authorize access="hasRole('ROLE_ADMIN')">
  <input type="button" value="Deploy" onclick="openDeployWindow()">
  <input type="button" value="Delete" onclick="openDeleteWindow()">
  <input type="button" value="Create" onclick="openCreateWindow()">
  <br/>
+ </sec:authorize>
  <div search_div>
 	Filter Database Changes:
 	<input type="text" id="generalFilterText">

@@ -55,9 +55,14 @@ public class DBCADController {
 		}
 	}
 	
-	@RequestMapping(value = "/", method = RequestMethod.GET)
+/*	@RequestMapping(value = "/", method = RequestMethod.GET)
 	public ModelAndView rootPage() {
 		return manageDatabases();
+	}*/
+	
+	@RequestMapping(value = "/", method = RequestMethod.GET)
+	public ModelAndView index() {
+		return new ModelAndView("index");
 	}
 	
 	@RequestMapping(value = "/manage-databases", method = RequestMethod.GET)

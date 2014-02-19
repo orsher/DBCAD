@@ -81,12 +81,12 @@ public class OracleDBService extends DBService {
 	        //out.println(password);
 	        out.println("set echo on");
 	        out.println("whenever SQLERROR exit FAILURE;");
+	        out.println("alter session set current_schema="+dbSchemaName+";");
 	        out.println(script);
 	        out.println("exit");
 	        out.flush();
 	        exitCode.set(process.waitFor());
 	        out.flush();
-	        System.out.println("DT: "+exitCode);
         }
         catch(Exception e){
         	e.printStackTrace();

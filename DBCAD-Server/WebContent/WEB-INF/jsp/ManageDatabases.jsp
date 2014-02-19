@@ -115,7 +115,7 @@
                     '</td>'+
                 	'</tr>';
         		});
-            	retValue += '<td colspan="5" style="text-align: center;">'+
+            	retValue += '<td colspan="6" style="text-align: center;">'+
                 '<ul id="pagination-flickr">';
                 
                 if (currentManageInstancePage == 1){

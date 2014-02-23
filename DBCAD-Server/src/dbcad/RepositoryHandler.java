@@ -587,6 +587,35 @@ public class RepositoryHandler {
 		}
 	}
 	
+	public int saveDatabaseChange(String dbChangeId, String schemaId,String dbChangeText) {
+		Connection conn=null;
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("update db_requests set code=?, last_changed_timestamp=? where db_request_id = ? and schema_id=?");
+			preparedStatement.setString(1, dbChangeText);
+			preparedStatement.setTimestamp(2, new java.sql.Timestamp(System.currentTimeMillis()));
+			preparedStatement.setString(3, dbChangeId);
+			preparedStatement.setString(4, schemaId);
+			preparedStatement.executeUpdate();
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
+			return 0;
+		}
+		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
+			return 1;
+		}
+	}
+	
 	public int deleteDatabaseChange(String dbChangeId) {
 		Connection conn=null;
 		try{
@@ -855,7 +884,7 @@ public class RepositoryHandler {
             	totalRowNumber.set(numRowsRs.getInt(1));
             }
             numRowsRs.close();
-			PreparedStatement statusPreparedStatement = conn.prepareStatement("select lobgm.lob_id, dbrs.status from db_request_status dbrs, lob_group_mapping lobgm where dbrs.db_group_id = lobgm.db_group_id and dbrs.db_request_id=?");
+			PreparedStatement statusPreparedStatement = conn.prepareStatement("select db_req_lob_group_mapping.lob_id,dbrs.status from db_request_status dbrs right outer join (select distinct lgm.db_group_id, lgm.lob_id, dbr.db_request_id from db_requests dbr, group_schema_mapping gsm, lob_group_mapping lgm where dbr.schema_id = gsm.schema_id and lgm.db_group_id=gsm.db_group_id) db_req_lob_group_mapping on dbrs.db_request_id = db_req_lob_group_mapping.db_request_id and dbrs.db_group_id =db_req_lob_group_mapping.db_group_id where db_req_lob_group_mapping.db_request_id=?");
 			ResultSet statusRs = null;
 			while (rs.next()){
 				HashMap<String,String> dbChangeStatus = new HashMap<String,String>();
@@ -865,7 +894,7 @@ public class RepositoryHandler {
 				statusPreparedStatement.setString(1, rs.getString("db_request_id"));
 				statusRs = statusPreparedStatement.executeQuery();
 				while (statusRs.next()){
-					dbChangeStatus.put(statusRs.getString("lob_id"), statusRs.getString("status"));
+					dbChangeStatus.put(statusRs.getString("lob_id"), statusRs.getString("status") == null ? "" : statusRs.getString("status"));
 				}
 				databaseChangeLobsStatus.add(dbChangeStatus);
 			}

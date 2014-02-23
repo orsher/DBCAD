@@ -9,7 +9,10 @@
     <link href="css/dbcad.css" rel="stylesheet" type="text/css" />
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
-        	var currentPage=1;
+        	var dbChangesCurrentPage= ${dbChangesCurrentPage};
+        	var dbChangesNoOfPages = ${dbChangesNoOfPages};
+        	var dbChangesLobList = ${dbChangesLobList};
+        	var dbChangesTableValues = ${dbChangesTableValues};
         	var searchFilter={};
         	function openDeployWindow(){
         		 $('#deploy_db_changes_div').addClass("Display");
@@ -19,6 +22,16 @@
        		}
         	function openCreateWindow(){
        		 	$('#create_db_change_div').addClass("Display");
+       		}
+        	function openEditViewWindow(db_change_id){
+        		$.each(dbChangesTableValues, function(){
+        			if (this['db_request_id'] == db_change_id){
+        				$('#edit_view_db_change_div #db_change_id_text_field').val(this['db_request_id']);
+                		$('#edit_view_db_change_div #schema_select').val(this.schema_id);
+                		$('#edit_view_db_change_div #db_change_text').val(this.db_request_code);	
+        			}
+        		});
+       		 	$('#edit_view_db_change_div').addClass("Display");
        		}
 	        function deploy() {
 		        $('#lob_select :selected').each(function(){
@@ -35,17 +48,31 @@
 				        }
 			        });
 		        });
-		        getPageNumber(currentPage);
+		        getPageNumber(dbChangesCurrentPage);
 	        }
 	        
 	        function createDBChange() {
 		        $.ajax({
 			        type: "POST",
-			        url: "rest/db_change/"+$('#schema_select :selected').val()+"/"+$('#db_change_id_text_field').val(),
-			        data: "db_change_text="+encodeURIComponent($('#db_change_text').val())+ "&_method=PUT",
+			        url: "rest/db_change/"+$('#create_db_change_div #schema_select :selected').val()+"/"+$('#create_db_change_div #db_change_id_text_field').val(),
+			        data: "db_change_text="+encodeURIComponent($('#create_db_change_div #db_change_text').val())+ "&_method=PUT",
 			        success: function(response){
 				        closeCreateWindow();
-				        getPageNumber(currentPage);
+				        getPageNumber(dbChangesCurrentPage);
+			        },
+			        error: function(e){
+			        }
+		        });
+	        }
+	        
+	        function saveDBChange() {
+		        $.ajax({
+			        type: "POST",
+			        url: "rest/db_change/"+$('#edit_view_db_change_div #schema_select :selected').val()+"/"+$('#edit_view_db_change_div #db_change_id_text_field').val(),
+			        data: "db_change_text="+encodeURIComponent($('#edit_view_db_change_div #db_change_text').val())+ "&_method=POST",
+			        success: function(response){
+			        	closeEditViewWindow();
+				        getPageNumber(dbChangesCurrentPage);
 			        },
 			        error: function(e){
 			        }
@@ -58,15 +85,75 @@
 			        url: "getDbChangesTablePage",
 			        data: "page="+i+"&searchFilter="+JSON.stringify(searchFilter),
 			        success: function(response){
-			        	$('#db-changes-table').replaceWith(response);
-			        	addCheckBoxListener();
-			        	setCheckBoxesStatus();
-			        	currentPage=i;
+			        	var jsonResponse = JSON.parse(response);
+			        	console.log(jsonResponse);
+			        	dbChangesNoOfPages = jsonResponse["dbChangesNoOfPages"];
+			        	dbChangesCurrentPage = jsonResponse["dbChangesCurrentPage"];
+			        	dbChangesLobList = jsonResponse["dbChangesLobList"];
+			        	dbChangesTableValues = jsonResponse["dbChangesTableValues"];
+			        	fillDBChangesTable();
 			        },
 			        error: function(e){
 			        	alert('Error: ' + e.responseText);
 			        }
 		        });
+	        }
+	        
+	        function fillDBChangesTable(){
+	        	$('#db-changes-table-body').empty();
+	        	var retValue="";
+        		$.each(dbChangesTableValues, function(){
+        			var dbChangeRow = this;
+        			retValue += '<tr class="table_row" title=\''+this.db_request_code+'\'>'+
+        			'<td><input type="checkbox" class="db_change_checkbox" value='+this['db_request_id']+' id='+this['db_request_id']+'></td>'+
+        			'<td onclick=openEditViewWindow(\''+this['db_request_id']+'\')>'+this['db_request_id']+'</td>'+
+                    '<td class="dividing-column">'+this['schema_id']+'</td>';
+                    $.each(dbChangesLobList,function(key,value){
+                    	if (dbChangeRow[value] == null){
+                    		retValue += '<td>---</td>';
+                    	}
+                    	else{
+                    		retValue += '<td><div onclick="getLog(\''+dbChangeRow['db_request_id']+'\',\''+value+'\')">'+dbChangeRow[value]+'</div></td>';
+                    	}
+                    });
+        		});
+        		
+        		retValue +='</tr><tr><td colspan="'+ dbChangesLobList.length+3 +'" style="text-align: center;">'+
+                '<ul id="pagination-flickr">';
+                
+                if (dbChangesCurrentPage == 1){
+                	retValue += '<li class="previous-off">« Previous</li>';
+                }
+                else{
+                	retValue +='<li class="previous" onclick="getPageNumber(';
+                	retValue += dbChangesCurrentPage-1;
+                	retValue +=')">« Previous</li>';
+                }
+                
+                for (var i=1;i<=dbChangesNoOfPages;i++){
+                	if (i == dbChangesCurrentPage){
+                		retValue += i;
+                	}
+                	else{
+                		retValue += '<li onclick="getPageNumber('+ i +')">'+ i +'</li>';
+                	}
+                	
+                }
+                
+                if (dbChangesCurrentPage == dbChangesNoOfPages){
+                	retValue += '<li class="next-off" >Next »</li>';	
+                }
+                else{
+                	var nextDbChangesPage = dbChangesCurrentPage+1;
+                	retValue +='<li class="next" onclick="getPageNumber('+ nextDbChangesPage +')">Next »</li>';
+                }
+                
+                retValue +='	</ul>'+
+        		'</td>';
+         		
+	        	$('#db-changes-table-body').append(retValue);
+	        	addCheckBoxListener();
+	        	setCheckBoxesStatus();
 	        }
 	        function filterChanges() {
 	        	searchFilter.generalFilter = $('#generalFilterText').val();
@@ -90,6 +177,7 @@
 		                filterChanges();
 		            }
 		        });
+		        fillDBChangesTable();
 	        }
 	        
 	        var checkedChangeIds = [];
@@ -131,6 +219,9 @@
 	        function closeCreateWindow(){
 	        	$("#create_db_change_div").removeClass("Display");
 	        }
+	        function closeEditViewWindow(){
+	        	$("#edit_view_db_change_div").removeClass("Display");
+	        }
 	        function deleteDBChanges() {
 	        	$.each(checkedChangeIds,function(index, value){
 	        	    $.ajax({
@@ -138,7 +229,7 @@
 				        url: "rest/db_change/"+value,
 				        data: "_method=DELETE",
 				        success: function(response){
-				        	getPageNumber(currentPage);
+				        	getPageNumber(dbChangesCurrentPage);
 				        	closeDeleteWindow();
 				        	clearCheckedChangeIds();
 				        },
@@ -219,6 +310,20 @@
 		<textarea id="db_change_text" placeholder='SQL Script..' class="input_field" style="width: 500px; height: 170px;"></textarea>
 		<br/>
 		<input type="button" value="Create" onclick="createDBChange()">
+		<br/>
+	</div>
+	<div id="edit_view_db_change_div" class="ontopwindows">
+		<img src="css/images/closex.png" class="closewindowbutton" onclick='closeEditViewWindow()'>
+		<div class="ontopwindow_heading">Edit Database Change</div>
+		<input type="text" placeholder="DB Change ID..." class="input_field" id="db_change_id_text_field" name="db_change_id_text_field" disabled="true"/>
+		<form:select path="options" id="schema_select" disabled="true">
+			<form:option value="" label="Select DB Schema" disabled="true" selected="true"/>
+		    <form:options items="${options.db_schemas}" />
+		</form:select>
+		<br/>
+		<textarea id="db_change_text" placeholder='SQL Script..' class="input_field" style="width: 500px; height: 170px;"></textarea>
+		<br/>
+		<input type="button" value="Save" onclick="saveDBChange()">
 		<br/>
 	</div>
 	<div id="view_log_div" class="ontopwindows">

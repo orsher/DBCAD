@@ -14,7 +14,7 @@
                     </tr>
                 </thead>
                 <tbody id="db-changes-table-body">
-                    <c:forEach items="${dbChangesTableValues}" var="dbChange">
+                  <%--   <c:forEach items="${dbChangesTableValues}" var="dbChange">
                         <tr class="table_row" title="${dbChange.db_request_code}">
                         	<td><input type="checkbox" class="db_change_checkbox" value="${dbChange.db_request_id}" id="${dbChange.db_request_id}"></td>
                             <td>${dbChange.db_request_id}</td>
@@ -54,6 +54,6 @@
 	                    	</c:choose>
 			            	
 			            </ul>
-	            	</td>
+	            	</td> --%>
                 </tbody>
             </table>

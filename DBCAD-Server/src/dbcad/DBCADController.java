@@ -107,7 +107,25 @@ public class DBCADController {
 		return mav;
 	}
 
-	@RequestMapping(value = "/deploy", method = RequestMethod.GET)
+	@RequestMapping(value = "/manage-db-changes", method = RequestMethod.GET)
+	public ModelAndView ManageDBChangesView() {
+		Gson gson = new Gson();
+		HashMap<String, ArrayList<String>> options;
+		ArrayList<HashMap<String, String>> dbChangesTableValues;
+		AtomicInteger totalNumberOfRows = new AtomicInteger();
+		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus(null,0, TABLE_MAX_ROWS,totalNumberOfRows);
+		options = new HashMap<String, ArrayList<String>>();
+		options.put("lobs", repHandler.getLobs());
+		options.put("db_schemas", repHandler.getDatabaseSchemaIds());
+		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
+		return new ModelAndView("ManageDBChanges", "options", options).addObject("dbChangesTableValues",gson.toJson(dbChangesTableValues)).addObject("dbChangesNoOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("dbChangesCurrentPage",1).addObject("dbChangesLobList", gson.toJson(repHandler.getLobs()));
+//		HashMap<String, ArrayList<String>> options = new HashMap<String, ArrayList<String>>();
+//		options.put("db_schemas", repHandler.getDatabaseSchemaIds());
+//		options.put("db_changes", repHandler.getNextDBChanges(10, null));
+//		return new ModelAndView("ManageDBChanges", "options", options);
+	}
+	
+/*	@RequestMapping(value = "/deploy", method = RequestMethod.GET)
 	public ModelAndView deployDBChangesView() {
 		HashMap<String, ArrayList<String>> options;
 		ArrayList<HashMap<String, String>> dbChangesTableValues;
@@ -117,19 +135,27 @@ public class DBCADController {
 		options.put("lobs", repHandler.getLobs());
 		options.put("db_schemas", repHandler.getDatabaseSchemaIds());
 		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
-		return new ModelAndView("DeployDBChanges", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("currentPage",1);
-	}
+		return new ModelAndView("DeployDBChanges", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("dbChangesNoOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("currentPage",1);
+	}*/
 	
 	@RequestMapping(value = "/getDbChangesTablePage", method = RequestMethod.POST)
-	public ModelAndView getDBChangesTablePage(@RequestParam(value = "page") int page, @RequestParam(value = "searchFilter", defaultValue = "{}") JSONObject searchFilterJSON) {
-		HashMap<String, ArrayList<String>> options;
+	public @ResponseBody String getDBChangesTablePage(@RequestParam(value = "page") int page, @RequestParam(value = "searchFilter", defaultValue = "{}") JSONObject searchFilterJSON) {
+	//public ModelAndView getDBChangesTablePage(@RequestParam(value = "page") int page, @RequestParam(value = "searchFilter", defaultValue = "{}") JSONObject searchFilterJSON) {
+		Gson gson = new Gson();
+		JSONObject jsonResponse = new JSONObject();
+		//HashMap<String, ArrayList<String>> options;
 		ArrayList<HashMap<String, String>> dbChangesTableValues;
 		AtomicInteger totalNumberOfRows = new AtomicInteger();
 		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus(searchFilterJSON.isNull("generalFilter") ? null : searchFilterJSON.getString("generalFilter"),(page-1)*TABLE_MAX_ROWS, TABLE_MAX_ROWS,totalNumberOfRows);
-		options = new HashMap<String, ArrayList<String>>();
-		options.put("lobs", repHandler.getLobs());
+		jsonResponse.put("dbChangesTableValues", dbChangesTableValues);
+		jsonResponse.put("dbChangesLobList", repHandler.getLobs());
+		jsonResponse.put("dbChangesNoOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS));
+		jsonResponse.put("dbChangesCurrentPage",page);
+		return jsonResponse.toString();
+		//options = new HashMap<String, ArrayList<String>>();
+		//options.put("lobs", repHandler.getLobs());
 		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
-		return new ModelAndView("ManageDBChangesTable", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("currentPage",page);
+		//return new ModelAndView("ManageDBChangesTable", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("currentPage",page);
 	}
 	
 	@RequestMapping(value = "/getDbSchemasTablePage", method = RequestMethod.POST)
@@ -321,23 +347,6 @@ public class DBCADController {
 		return returnText;
 	}
 
-	@RequestMapping(value = "/manage-db-changes", method = RequestMethod.GET)
-	public ModelAndView ManageDBChangesView() {
-		HashMap<String, ArrayList<String>> options;
-		ArrayList<HashMap<String, String>> dbChangesTableValues;
-		AtomicInteger totalNumberOfRows = new AtomicInteger();
-		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus(null,0, TABLE_MAX_ROWS,totalNumberOfRows);
-		options = new HashMap<String, ArrayList<String>>();
-		options.put("lobs", repHandler.getLobs());
-		options.put("db_schemas", repHandler.getDatabaseSchemaIds());
-		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
-		return new ModelAndView("ManageDBChanges", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("currentPage",1);
-//		HashMap<String, ArrayList<String>> options = new HashMap<String, ArrayList<String>>();
-//		options.put("db_schemas", repHandler.getDatabaseSchemaIds());
-//		options.put("db_changes", repHandler.getNextDBChanges(10, null));
-//		return new ModelAndView("ManageDBChanges", "options", options);
-	}
-
 	@RequestMapping(value = "/rest/db_change/{schema_id}/{db_change_id}", method = RequestMethod.PUT)
 	public @ResponseBody
 	String addDBChange(
@@ -355,6 +364,23 @@ public class DBCADController {
 		return returnText;
 	}
 
+	@RequestMapping(value = "/rest/db_change/{schema_id}/{db_change_id}", method = RequestMethod.POST)
+	public @ResponseBody
+	String saveDBChange(
+			@RequestParam(value = "db_change_text") String dbChangeText,
+			@PathVariable("schema_id") String schemaId,
+			@PathVariable("db_change_id") String dbChangeId) {
+		String returnText;
+		int statusCode = repHandler.saveDatabaseChange(dbChangeId, schemaId,
+				dbChangeText);
+		if (statusCode == 0) {
+			returnText = "Database Change saved";
+		} else {
+			returnText = "Error: Database Change was not saved";
+		}
+		return returnText;
+	}
+	
 	@RequestMapping(value = "/rest/db_change/{db_change_id}", method = RequestMethod.DELETE)
 	public @ResponseBody
 	String deleteDBChange(@PathVariable("db_change_id") String dbChangeId) {

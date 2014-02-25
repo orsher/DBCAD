@@ -152,7 +152,6 @@
         		'</td>';
          		
 	        	$('#db-changes-table-body').append(retValue);
-	        	addCheckBoxListener();
 	        	setCheckBoxesStatus();
 	        }
 	        function filterChanges() {

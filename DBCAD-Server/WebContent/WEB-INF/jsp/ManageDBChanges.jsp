@@ -13,6 +13,7 @@
         	var dbChangesNoOfPages = ${dbChangesNoOfPages};
         	var dbChangesLobList = ${dbChangesLobList};
         	var dbChangesTableValues = ${dbChangesTableValues};
+        	var lastLogJson = {};
         	var searchFilter={};
         	function openDeployWindow(){
         		 $('#deploy_db_changes_div').addClass("Display");
@@ -251,12 +252,38 @@
 		        });
 	        }
 	        function openViewLogWindow(log){
+	        	lastLogJson = JSON.parse(log);
 	        	$('#view_log_div').addClass("Display");
-	        	$('#view_log_div #log_text').val(log);
+	        	//$('#view_log_div #log_text').val(log);
+	        	$('#view_log_div #log_tree_ul').empty();
+	        	$('#log_text').val("");
+	        	$.each(JSON.parse(log),function(index, value){
+	        		console.log(index);
+	        		var instance_sub_tree = '<li class="instance_tree_entry" onclick="displayInstanceRunTree(this)">'+index+'<ul>';
+	        		$.each(value,function(run_index,run_value){
+	        			instance_sub_tree+='<li class="instance_run_tree_entry_nodisplay" onclick=\'displayRunLog("'+index+'",'+run_index+')\'>'+run_value['run_date']+'</li>';
+	        		});
+	        		instance_sub_tree+='</ul></li>';
+	        		$('#view_log_div #log_tree_ul').append(instance_sub_tree);
+	        	});
+	        	$('.instance_tree_entry li').click(function(e){
+	        		e.stopPropagation();
+	        	});
 	        }
 	        function closeViewLogWindow(log){
 	        	$('#view_log_div').removeClass("Display");
 	        }
+	        
+	        function displayInstanceRunTree(instanceli){
+	        	$(instanceli).find('li').each(function(){
+	        		$(this).toggleClass("instance_run_tree_entry_nodisplay");
+	        	});
+	        }
+	        
+	        function displayRunLog(instance,runIndex){
+	        	$('#log_text').val(lastLogJson[instance][runIndex]['log']);
+	        }
+	        
 	        
         </script>
 </head>
@@ -328,7 +355,8 @@
 	<div id="view_log_div" class="ontopwindows">
 		<img src="css/images/closex.png" class="closewindowbutton" onclick='closeViewLogWindow()'>
 		<div class="ontopwindow_heading">Log</div>
-		<textarea id="log_text" style="width: 500px; height: 170px;"></textarea>
+		<div id="log_tree_div"><ul id="log_tree_ul"></ul></div>
+		<textarea id="log_text"></textarea>
 	</div>
 </body>
 </html>

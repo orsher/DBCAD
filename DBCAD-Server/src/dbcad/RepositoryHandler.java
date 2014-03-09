@@ -1372,7 +1372,7 @@ public class RepositoryHandler {
 		JSONObject deploymentLog = new JSONObject();
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select dl.db_id, dl.run_date, dl.log from deployment_log dl, database_group_instance_mapping dgim, lob_group_mapping lgm where dl.db_id=dgim.db_id and dgim.db_group_id =lgm.db_group_id and lgm.lob_id=? and dl.db_request_id=?");
+			PreparedStatement preparedStatement = conn.prepareStatement("select dl.db_id, dl.run_date,dl.log from deployment_log dl, db_requests dbr, group_schema_mapping gcm, database_group_instance_mapping dgim, lob_group_mapping lgm where dl.db_id=dgim.db_id and dbr.db_request_id = dl.db_request_id and gcm.schema_id = dbr.schema_id and gcm.db_group_id = dgim.db_group_id and dgim.db_group_id = lgm.db_group_id and lgm.lob_id=? and dl.db_request_id=?");
 			preparedStatement.setString(1, lobId);
 			preparedStatement.setString(2, dbChangeId);
 			ResultSet rs = preparedStatement.executeQuery();

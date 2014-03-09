@@ -526,3 +526,22 @@ ul.selected_options li img{
 div#login_logout {
 	float: right;
 }
+
+#view_log_div #log_tree_div {
+	float: left;
+	width: 34%;
+}
+
+#view_log_div #log_text {
+	float: right;
+	width: 64%;
+	height: 80%;
+}
+
+.instance_run_tree_entry_nodisplay {
+	display: none;
+}
+
+#log_tree_ul > li {
+	cursor: hand;
+}

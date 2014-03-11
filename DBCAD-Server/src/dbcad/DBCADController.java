@@ -286,6 +286,26 @@ public class DBCADController {
 	public @ResponseBody
 	String addDBInstance(@PathVariable("db_instance_id") String dbInstanceId, @RequestParam(value = "dbPluginType") String dbPluginType, @RequestParam(value = "dbHost") String dbHost,
 			@RequestParam(value = "dbPort") Integer dbPort,@RequestParam(value = "pluginInstanceParameters") JSONObject pluginInstanceParameters) {
+		DBService dbService = DBService.getDBService(dbPluginType);
+		HashMap<String,HashMap<String,String>> parameterAttributes = dbService.getInstanceParameterAttributes();
+
+		try{
+			BasicTextEncryptor textEncryptor = new BasicTextEncryptor();
+			textEncryptor.setPassword(ENCRYPTION_KEY);
+		
+			Iterator<?> keys = pluginInstanceParameters.keys();
+			while( keys.hasNext() ){
+	            String key = (String)keys.next();
+	            if (parameterAttributes.get(key) != null && parameterAttributes.get(key).get("ENCRYPTED").equals("TRUE") ){
+	            	String clearTextValue = (String)pluginInstanceParameters.get(key);
+	            	pluginInstanceParameters.put(key,textEncryptor.encrypt(clearTextValue));
+	            }
+	        }
+			
+		}catch(Exception e){
+			e.printStackTrace();
+		}
+		
 		DBInstance dbInstance = new DBInstance(dbInstanceId,dbPluginType,dbHost,dbPort,Utils.jsonToHashMap(pluginInstanceParameters));
 		String returnText;
 		int retCode = repHandler.addDatabaseInstance(dbInstance.getDbId(),dbInstance.getDbPluginType(), dbInstance.getDbHost(),

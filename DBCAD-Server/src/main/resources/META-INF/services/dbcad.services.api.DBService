@@ -1,2 +1,3 @@
 dbcad.services.OracleDBService
 dbcad.services.MysqlDBService
+dbcad.services.CouchbaseDBService

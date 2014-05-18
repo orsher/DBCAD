@@ -5,7 +5,8 @@
 <table id="db-changes-table" class="table">
                 <thead>
                     <tr>
-                        <th></th>
+                    <sec:authorize access="hasRole('ROLE_ADMIN')"> <th></th> </sec:authorize>
+                        
                         <th>Database Change ID</th>
                         <th class="dividing-column">Schema ID</th>
                         <c:forEach items="${options.lobs}" var="lob">

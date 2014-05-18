@@ -105,9 +105,12 @@
 	        	var retValue="";
         		$.each(dbChangesTableValues, function(){
         			var dbChangeRow = this;
-        			retValue += '<tr class="table_row" title=\''+this.db_request_code+'\'>'+
-        			'<td><input type="checkbox" class="db_change_checkbox" value='+this['db_request_id']+' id='+this['db_request_id']+'></td>'+
-        			'<td onclick=openEditViewWindow(\''+this['db_request_id']+'\')>'+this['db_request_id']+'</td>'+
+        			retValue += '<tr class="table_row" title=\''+this.db_request_code+'\'>' +
+        			<sec:authorize access="hasRole('ROLE_ADMIN')"> '<td><input type="checkbox"' + </sec:authorize>
+        			' class="db_change_checkbox" value='+this['db_request_id']+' id='+this['db_request_id']+'></td>'+
+        			'<td '+
+        			<sec:authorize access="hasRole('ROLE_ADMIN')"> 'onclick=openEditViewWindow(\''+this['db_request_id']+'\')' + </sec:authorize>
+        			'>'+this['db_request_id']+'</td>'+
                     '<td class="dividing-column">'+this['schema_id']+'</td>';
                     $.each(dbChangesLobList,function(key,value){
                     	if (dbChangeRow[value] == null){

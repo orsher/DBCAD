@@ -18,6 +18,9 @@ import org.jasypt.util.text.BasicTextEncryptor;
 import org.jasypt.util.text.StrongTextEncryptor;
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.springframework.security.access.prepost.PreAuthorize;
+//import org.springframework.security.access.annotation.Secured;
+//import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -65,6 +68,8 @@ public class DBCADController {
 		return new ModelAndView("index");
 	}
 	
+	//@PreAuthorize("hasRole('ROLE_ADMIN')")
+	//@Secured("ROLE_ADMIN")
 	@RequestMapping(value = "/manage-databases", method = RequestMethod.GET)
 	public ModelAndView manageDatabases() {
 		Gson gson = new Gson();
@@ -107,6 +112,8 @@ public class DBCADController {
 		return mav;
 	}
 
+	@PreAuthorize("hasRole('ROLE_ADMIN')")
+	//@Secured("sss")
 	@RequestMapping(value = "/manage-db-changes", method = RequestMethod.GET)
 	public ModelAndView ManageDBChangesView() {
 		Gson gson = new Gson();
@@ -158,6 +165,7 @@ public class DBCADController {
 		//return new ModelAndView("ManageDBChangesTable", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("currentPage",page);
 	}
 	
+	
 	@RequestMapping(value = "/getDbSchemasTablePage", method = RequestMethod.POST)
 	public @ResponseBody String getDBSchemasTablePage(@RequestParam(value = "page") int page,@RequestParam(value = "searchFilter", defaultValue = "{}") JSONObject searchFilterJSON) {
 		Gson gson = new Gson();
@@ -197,6 +205,7 @@ public class DBCADController {
 		return jsonResponse.toString();
 	}
 
+	
 	@RequestMapping(value = "/rest/deploy/{lob_id}", method = RequestMethod.PUT)
 	public @ResponseBody
 	String deployDBChangesOnLOB(@PathVariable("lob_id") String lobId,

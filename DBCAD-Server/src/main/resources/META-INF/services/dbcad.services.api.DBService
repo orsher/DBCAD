@@ -1,3 +1,6 @@
 dbcad.services.OracleDBService
 dbcad.services.MysqlDBService
+dbcad.services.VerticaDBService
 dbcad.services.CouchbaseDBService
+dbcad.services.CassandraDBService
+dbcad.services.CassandraCQLDBService

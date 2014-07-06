@@ -47,7 +47,12 @@ public class CassandraCQLDBService extends DBService {
 		final StringBuilder output= new StringBuilder();
 		ProcessBuilder processBuilder;
 		
-		processBuilder = new ProcessBuilder(PythonPath,cassandraCQLClientPath , "-u",username,  "-p",password,hostname,port+"", "-k",dbSchemaName.toLowerCase());
+		if (PythonPath != null && PythonPath != ""){
+			processBuilder = new ProcessBuilder(PythonPath,cassandraCQLClientPath , "-u",username,  "-p",password,hostname,port+"", "-k",dbSchemaName.toLowerCase(),"--debug");
+		}
+		else{
+			processBuilder = new ProcessBuilder(cassandraCQLClientPath , "-u",username,  "-p",password,hostname,port+"", "-k",dbSchemaName.toLowerCase(),"--debug");
+		}
         
 		processBuilder.redirectErrorStream(true);
         try {

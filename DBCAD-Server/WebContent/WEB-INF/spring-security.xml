@@ -20,8 +20,7 @@
   <authentication-manager>  
   <authentication-provider>  
    <user-service>  
-    <user name="orsh" password="orsh" authorities="ROLE_ADMIN,ROLE_USER" />
-    <user name="ayelets" password="ayelets" authorities="ROLE_ADMIN,ROLE_USER" />
+    <user name="admin" password="bi**perf1234" authorities="ROLE_ADMIN,ROLE_USER" />
     <user name="guest" password="guest" authorities="ROLE_USER" />  
    </user-service>  
   </authentication-provider>  

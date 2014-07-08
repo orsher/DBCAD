@@ -505,10 +505,11 @@ public class RepositoryHandler {
 		try{
 			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_request_status (db_request_id,db_group_id,status,update_date) "+
-																		"select dbr.db_request_id,dbg.db_group_id,?,now() from db_requests dbr, db_schema dbs, database_groups dbg, lob_group_mapping lobgm "+ 
+																		"select dbr.db_request_id,dbg.db_group_id,?,now() from db_requests dbr, db_schema dbs, database_groups dbg, lob_group_mapping lobgm, group_schema_mapping gsm "+ 
 																		"where dbr.schema_id = dbs.schema_id "+
 																		"and dbs.db_type_id = dbg.db_type_id "+
-																		"and dbg.db_group_id = lobgm.db_group_id "+ 
+																		"and dbg.db_group_id = lobgm.db_group_id "+
+																		"and lobgm.db_group_id = gsm.db_group_id "+
 																		"and dbr.db_request_id=? and lobgm.lob_id=? on duplicate key update status=?, update_date=now()");
 			preparedStatement.setString(1, status);
 			preparedStatement.setString(2, dbChangeId);

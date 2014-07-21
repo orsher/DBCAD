@@ -1175,7 +1175,7 @@ public class RepositoryHandler {
 		String db_req_status = null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select status from db_request_status drs, lob_group_mapping gm where drs.db_group_id=gm.db_group_id and drs.db_request_id=? and lob_id =? ");
+			PreparedStatement preparedStatement = conn.prepareStatement("select status from db_request_status drs, db_requests dbr, group_schema_mapping gsm, lob_group_mapping gm where drs.db_request_id=dbr.db_request_id and drs.db_group_id=gm.db_group_id and gm.db_group_id=gsm.db_group_id and gsm.schema_id=dbr.schema_id and drs.db_request_id=? and lob_id =?");
 			preparedStatement.setString(1, dbChangesId);
 			preparedStatement.setString(2, lob_id);
 			ResultSet statusRS = preparedStatement.executeQuery();

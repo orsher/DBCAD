@@ -52,25 +52,61 @@ public class RepositoryHandler {
 //		}
 	}
 	
-	protected boolean checkDbChanges(String dbChangesId, String lob_id){
+	//If lob_id is null, result is for all lobs
+	protected JSONObject getDbChangeDeploymentStatus(String dbChangeId, String lob_id){
 		ResultSet rs = null;
-		String status = null;
 		Connection conn=null;
+		JSONObject dbChangeDeploymentStatus = new JSONObject();
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select * from db_request_status dbrs, lob_group_mapping lobgm where dbrs.db_group_id = lobgm.db_group_id and dbrs.db_request_id=? and lobgm.lob_id=?");
-			preparedStatement.setString(1, dbChangesId);
-			preparedStatement.setString(2, lob_id);
+			StringBuilder query = new StringBuilder(" select db_req_mapping.lob_id, db_req_mapping.db_group_id, db_req_mapping.db_id, dbcs.status  "+
+					" from "+
+					" db_change_status dbcs "+
+					" right outer join  "+
+					" (select lgm.db_group_id, lgm.lob_id, dgim.db_id, dbr.db_request_id  "+
+					"    from db_requests dbr, "+
+					"         group_schema_mapping gsm, "+
+					"         lob_group_mapping lgm, "+
+					"         database_group_instance_mapping dgim "+
+					"	where dbr.schema_id = gsm.schema_id "+
+					"	and gsm.db_group_id=dgim.db_group_id "+
+					"	and lgm.db_group_id=gsm.db_group_id "+
+					"	and dgim.deployable=1) db_req_mapping "+
+					"  on  "+
+					"  dbcs.db_change_id = db_req_mapping.db_request_id  "+
+					"  and dbcs.db_group_id = db_req_mapping.db_group_id "+
+					"  and dbcs.db_id = db_req_mapping.db_id "+
+					"  where db_req_mapping.db_request_id=? ");
+			if (lob_id != null){
+				query.append("  and db_req_mapping.lob_id=?");
+			}
+			PreparedStatement preparedStatement = conn.prepareStatement(query.toString());
+			
+			preparedStatement.setString(1, dbChangeId);
+			if (lob_id != null){
+				preparedStatement.setString(2, lob_id);
+			}
 			rs = preparedStatement.executeQuery();
-			if (rs.next()){
-				status = rs.getString("status");
-				System.out.println(status);
+
+			while (rs.next()){
+				//Case no inserted instances from the same lob id
+				if (!dbChangeDeploymentStatus.has(rs.getString("lob_id"))){
+					//Create the lob
+					dbChangeDeploymentStatus.put(rs.getString("lob_id"), new JSONObject());
+					
+					//Case no inserted instances from the same group id
+					if (!dbChangeDeploymentStatus.getJSONObject(rs.getString("lob_id")).has(rs.getString("db_group_id"))){
+						//Create the group
+						dbChangeDeploymentStatus.getJSONObject(rs.getString("lob_id")).put(rs.getString("db_group_id"), new JSONObject());
+					}
+				}
+				
+				//Add instance status
+				dbChangeDeploymentStatus.getJSONObject(rs.getString("lob_id")).getJSONObject(rs.getString("db_group_id")).put(rs.getString("db_id"), rs.getObject("status") == null ? DBCADController.NA_STATUS : rs.getInt("status"));
 			}
 		}catch(Exception e){
 			e.printStackTrace();
-		}
-		if (status != null && status.equals("DONE")){
-			return true;
+			return null;
 		}
 		try{
 			conn.close();
@@ -78,7 +114,7 @@ public class RepositoryHandler {
 		catch(Exception e){
 			System.out.println("Error: Could not close connection" );
 		}
-		return false;
+		return dbChangeDeploymentStatus;
 	}
 	
 	protected ArrayList<String> getDatabaseIds(){
@@ -500,21 +536,16 @@ public class RepositoryHandler {
 		}
 	}
 
-	public boolean markDbChangeDeploymentStatus(String dbChangeId, String lobId, String status) {
+	public boolean markDbChangeDeploymentStatus(String dbChangeId, String dbGroupId, String dbId, int status) {
 		Connection conn=null;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_request_status (db_request_id,db_group_id,status,update_date) "+
-																		"select dbr.db_request_id,dbg.db_group_id,?,now() from db_requests dbr, db_schema dbs, database_groups dbg, lob_group_mapping lobgm, group_schema_mapping gsm "+ 
-																		"where dbr.schema_id = dbs.schema_id "+
-																		"and dbs.db_type_id = dbg.db_type_id "+
-																		"and dbg.db_group_id = lobgm.db_group_id "+
-																		"and lobgm.db_group_id = gsm.db_group_id "+
-																		"and dbr.db_request_id=? and lobgm.lob_id=? on duplicate key update status=?, update_date=now()");
-			preparedStatement.setString(1, status);
-			preparedStatement.setString(2, dbChangeId);
-			preparedStatement.setString(3, lobId);
-			preparedStatement.setString(4, status);
+			PreparedStatement preparedStatement = conn.prepareStatement("insert into db_change_status (db_change_id,db_group_id,db_id,status,update_date) values (?,?,?,?,now()) on duplicate key update status=?, update_date=now()");
+			preparedStatement.setString(1, dbChangeId);
+			preparedStatement.setString(2, dbGroupId);
+			preparedStatement.setString(3, dbId);
+			preparedStatement.setInt(4, status);
+			preparedStatement.setInt(5, status);
 			int result = preparedStatement.executeUpdate();
 			try{
 				conn.close();
@@ -857,9 +888,10 @@ public class RepositoryHandler {
 	}
 	
 	
-	public ArrayList<HashMap<String, String>> getDatabaseChangeLobsStatus(String generalFilter, int offset, int bulkSize, AtomicInteger totalRowNumber) {
+	public JSONArray getDatabaseChangesDeploymentStatus(String generalFilter, int offset, int bulkSize, AtomicInteger totalRowNumber) {
 		ResultSet rs = null;
-		ArrayList<HashMap<String,String>> databaseChangeLobsStatus = new ArrayList<HashMap<String,String>>();
+		//ArrayList<HashMap<String,String>> databaseChangesDeploymentStatus = new ArrayList<HashMap<String,String>>();
+		JSONArray databaseChangesDeploymentStatus = new JSONArray();
 		Connection conn=null;
 		try{
 			System.out.println(generalFilter+" "+offset+" "+bulkSize);
@@ -885,19 +917,57 @@ public class RepositoryHandler {
             	totalRowNumber.set(numRowsRs.getInt(1));
             }
             numRowsRs.close();
-			PreparedStatement statusPreparedStatement = conn.prepareStatement("select db_req_lob_group_mapping.lob_id,dbrs.status from db_request_status dbrs right outer join (select distinct lgm.db_group_id, lgm.lob_id, dbr.db_request_id from db_requests dbr, group_schema_mapping gsm, lob_group_mapping lgm where dbr.schema_id = gsm.schema_id and lgm.db_group_id=gsm.db_group_id) db_req_lob_group_mapping on dbrs.db_request_id = db_req_lob_group_mapping.db_request_id and dbrs.db_group_id =db_req_lob_group_mapping.db_group_id where db_req_lob_group_mapping.db_request_id=?");
-			ResultSet statusRs = null;
+//			PreparedStatement statusPreparedStatement = conn.prepareStatement(
+//							"select db_req_mapping.lob_id, db_req_mapping.db_group_id, db_req_mapping.db_id, dbcs.status "+
+//							"from "+
+//							" db_change_status dbcs "+
+//							" right outer join  "+
+//							" (select lgm.db_group_id, lgm.lob_id, dgim.db_id, dbr.db_request_id  "+
+//							"    from db_requests dbr, "+
+//							"         group_schema_mapping gsm, "+
+//							"         lob_group_mapping lgm, "+
+//							"         database_group_instance_mapping dgim "+
+//							"	where dbr.schema_id = gsm.schema_id "+
+//							"	and gsm.db_group_id=dgim.db_group_id "+
+//							"	and lgm.db_group_id=gsm.db_group_id "+
+//							"	and dgim.deployable=1) db_req_mapping "+
+//							"  on  "+
+//							"  dbcs.db_change_id = db_req_mapping.db_request_id  "+
+//							"  and dbcs.db_group_id = db_req_mapping.db_group_id "+
+//							"  and dbcs.db_id = db_req_mapping.db_id "+
+//							"  where db_req_mapping.db_request_id=?"
+//							);
+//			ResultSet statusRs = null;
 			while (rs.next()){
-				HashMap<String,String> dbChangeStatus = new HashMap<String,String>();
-				dbChangeStatus.put("db_request_id", rs.getString("db_request_id"));
-				dbChangeStatus.put("db_request_code", rs.getString("code"));
-				dbChangeStatus.put("schema_id", rs.getString("schema_id"));
-				statusPreparedStatement.setString(1, rs.getString("db_request_id"));
-				statusRs = statusPreparedStatement.executeQuery();
-				while (statusRs.next()){
-					dbChangeStatus.put(statusRs.getString("lob_id"), statusRs.getString("status") == null ? "" : statusRs.getString("status"));
-				}
-				databaseChangeLobsStatus.add(dbChangeStatus);
+//				//HashMap<String,String> dbChangeStatus = new HashMap<String,String>();
+//				//dbChangeStatus.put("db_request_id", rs.getString("db_request_id"));
+//				JSONObject dbChangeDeploymentStatus = new JSONObject();
+//				statusPreparedStatement.setString(1, rs.getString("db_request_id"));
+//				statusRs = statusPreparedStatement.executeQuery();
+//
+//				while (statusRs.next()){
+//					//Case no inserted instances from the same lob id
+//					if (!dbChangeDeploymentStatus.has(statusRs.getString("lob_id"))){
+//						//Create the lob
+//						dbChangeDeploymentStatus.put(statusRs.getString("lob_id"), new JSONObject());
+//						
+//						//Case no inserted instances from the same group id
+//						if (!dbChangeDeploymentStatus.getJSONObject(statusRs.getString("lob_id")).has(statusRs.getString("db_group_id"))){
+//							//Create the group
+//							dbChangeDeploymentStatus.getJSONObject(statusRs.getString("lob_id")).put(statusRs.getString("db_group_id"), new JSONObject());
+//						}
+//					}
+//					
+//					//Add instance status
+//					dbChangeDeploymentStatus.getJSONObject(statusRs.getString("lob_id")).getJSONObject(statusRs.getString("db_group_id")).put(statusRs.getString("db_id"), statusRs.getObject("status") == null ? DBCADController.NA_STATUS : statusRs.getInt("status"));
+//
+//				}
+				JSONObject dbChangeAttributes = new JSONObject();
+				dbChangeAttributes.put("db_request_code", rs.getString("code"));
+				dbChangeAttributes.put("schema_id", rs.getString("schema_id"));
+				dbChangeAttributes.put("db_change_id", rs.getString("db_request_id"));
+				dbChangeAttributes.put("deployment_status", getDbChangeDeploymentStatus(rs.getString("db_request_id"),null));
+				databaseChangesDeploymentStatus.put(dbChangeAttributes);
 			}
 			rs.close();
 		}catch(Exception e){
@@ -909,7 +979,7 @@ public class RepositoryHandler {
 		catch(Exception e){
 			System.out.println("Error: Could not close connection" );
 		}
-		return databaseChangeLobsStatus;
+		return databaseChangesDeploymentStatus;
 	}
 
 	public ArrayList<DBSchema> getDatabaseSchemas(String generalFilter, int offset, int bulkSize, AtomicInteger totalRowNumber) {
@@ -1170,17 +1240,18 @@ public class RepositoryHandler {
 			return null;
 		}
 	}
-	public Boolean isDbChangeDeployed(String dbChangesId, String lob_id){
+	public Boolean isDbChangeDeployed(String dbChangesId, String dbGroupId, String dbId){
 		Connection conn=null;
-		String db_req_status = null;
+		int db_req_status = DBCADController.ERROR_STATUS;
 		try{
 			conn = datasource.getConnection();
-			PreparedStatement preparedStatement = conn.prepareStatement("select status from db_request_status drs, db_requests dbr, group_schema_mapping gsm, lob_group_mapping gm where drs.db_request_id=dbr.db_request_id and drs.db_group_id=gm.db_group_id and gm.db_group_id=gsm.db_group_id and gsm.schema_id=dbr.schema_id and drs.db_request_id=? and lob_id =?");
+			PreparedStatement preparedStatement = conn.prepareStatement("select status from db_change_status where db_change_id=? and db_group_id=? and db_id=?");
 			preparedStatement.setString(1, dbChangesId);
-			preparedStatement.setString(2, lob_id);
+			preparedStatement.setString(2, dbGroupId);
+			preparedStatement.setString(3, dbId);
 			ResultSet statusRS = preparedStatement.executeQuery();
 			if (statusRS.next()){
-				db_req_status = statusRS.getString("status");
+				db_req_status = statusRS.getInt("status");
 			}
 			else{
 				return false;
@@ -1191,8 +1262,7 @@ public class RepositoryHandler {
 			catch(Exception e){
 				System.out.println("Error: Could not close connection" );
 			}
-			System.out.println("isDbChangeDeployed "+dbChangesId+" "+ lob_id+" "+db_req_status);
-			if (db_req_status.equals("DONE")) {
+			if (db_req_status == DBCADController.OK_STATUS) {
 				return true;
 			} else {
 				return false;
@@ -1298,9 +1368,9 @@ public class RepositoryHandler {
 			return null;
 		}
 	}
-	public HashMap<DBInstance,String> getDeployableDatabaseInstancesAndSchemaNamesForLobIdAndDbChange(String dbChangeId,String lobId){
+	public ArrayList<DeploymentDetails> getDeployableDatabaseInstancesAndSchemaNamesForLobIdAndDbChange(String dbChangeId,String lobId){
 		Connection conn=null;
-		HashMap<DBInstance,String> databaseInstances = new HashMap<DBInstance,String>(); ;
+		ArrayList<DeploymentDetails> deploymentDetailsList = new ArrayList<DeploymentDetails>(); ;
 		try{
 			conn = datasource.getConnection();
 			PreparedStatement preparedStatement = conn.prepareStatement("select dbi.host, dbi.port,dbi.db_plugin_type, dbi.db_id,lgm.db_group_id,gsm.schema_name from db_requests dbr, group_schema_mapping gsm, lob_group_mapping lgm, database_group_instance_mapping dgim, database_instance dbi where dbr.schema_id = gsm.schema_id and lgm.db_group_id=gsm.db_group_id and dgim.db_group_id = gsm.db_group_id and dbi.db_id = dgim.db_id and dgim.deployable = 1 and lgm.lob_id=? and dbr.db_request_id=?");
@@ -1309,15 +1379,14 @@ public class RepositoryHandler {
 			ResultSet instanceRS = preparedStatement.executeQuery();
 			while (instanceRS.next()){
 				HashMap<String,String> pluginInstanceParameters = new HashMap<String,String>();
-				DBInstance dbInstance = new DBInstance(instanceRS.getString("db_id"),instanceRS.getString("db_plugin_type"),instanceRS.getString("host"),instanceRS.getInt("port"),pluginInstanceParameters);		
 				PreparedStatement innerPS = conn.prepareStatement("select parameter_name, parameter_value from db_plugin_instance_parameters where db_id=?");
 				innerPS.setString(1,instanceRS.getString("db_id"));
 				ResultSet innerRS = innerPS.executeQuery();
 				while (innerRS.next()){
 					pluginInstanceParameters.put(innerRS.getString("parameter_name"), innerRS.getString("parameter_value"));
 				}
-				
-				databaseInstances.put(dbInstance,instanceRS.getString("schema_name"));
+				DBInstance dbInstance = new DBInstance(instanceRS.getString("db_id"),instanceRS.getString("db_plugin_type"),instanceRS.getString("host"),instanceRS.getInt("port"),pluginInstanceParameters);
+				deploymentDetailsList.add(new DeploymentDetails(dbInstance,instanceRS.getString("db_group_id"),lobId,instanceRS.getString("schema_name"),dbChangeId));
 			}
 			try{
 				conn.close();
@@ -1325,7 +1394,7 @@ public class RepositoryHandler {
 			catch(Exception e){
 				System.out.println("Error: Could not close connection" );
 			}
-				return databaseInstances;
+				return deploymentDetailsList;
 		}
 		catch(Exception e){
 			try{
@@ -1428,6 +1497,50 @@ public class RepositoryHandler {
 				System.out.println("Error: Could not close connection" );
 			}
 				return schemaName;
+		}
+		catch(Exception e){
+			try{
+				conn.close();
+			}
+			catch(Exception ex){
+				System.out.println("Error: Could not close connection" );
+			}
+			e.printStackTrace();
+			return null;
+		}
+	}
+
+	public ArrayList<String> getDbChangesSortedByCreateDate(ArrayList<String> unsortedDbChangeIds) {
+		StringBuilder inClause = new StringBuilder();
+		if (unsortedDbChangeIds.size()>0){
+			inClause.append("?");
+		}
+		for (int i=1; i<unsortedDbChangeIds.size();i++){
+			inClause.append(",?");
+		}
+		
+		Connection conn=null;
+		ArrayList<String> sortedDbChangeIds = new ArrayList<String>();
+		try{
+			conn = datasource.getConnection();
+			PreparedStatement preparedStatement = conn.prepareStatement("select db_request_id from db_requests where db_request_id in ("+inClause+") order by created_timestamp");
+			int i=1;
+			for (String dbChangeId : unsortedDbChangeIds){
+				preparedStatement.setString(i, dbChangeId);
+				i++;
+			}
+			ResultSet rs = preparedStatement.executeQuery();
+			while (rs.next()){
+				sortedDbChangeIds.add(rs.getString("db_request_id"));
+			}
+			
+			try{
+				conn.close();
+			}
+			catch(Exception e){
+				System.out.println("Error: Could not close connection" );
+			}
+				return sortedDbChangeIds;
 		}
 		catch(Exception e){
 			try{

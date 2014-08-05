@@ -39,6 +39,10 @@ import dbcad.services.api.DBService;
 public class DBCADController {
 	public final static String ENCRYPTION_KEY="PBEWITHFPBEWITHF";
 	public final static SecretKeySpec ENC_KEY = new SecretKeySpec(ENCRYPTION_KEY.getBytes(), "AES");
+	public final static int ERROR_STATUS =1;
+	public final static int OK_STATUS =0;
+	public final static int RUNNING_STATUS = -1;
+	public final static int NA_STATUS = -2;
 	private static RepositoryHandler repHandler;
 	private static final int TABLE_MAX_ROWS = 10; 
 
@@ -118,14 +122,14 @@ public class DBCADController {
 	public ModelAndView ManageDBChangesView() {
 		Gson gson = new Gson();
 		HashMap<String, ArrayList<String>> options;
-		ArrayList<HashMap<String, String>> dbChangesTableValues;
+		JSONArray dbChangesTableValues;
 		AtomicInteger totalNumberOfRows = new AtomicInteger();
-		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus(null,0, TABLE_MAX_ROWS,totalNumberOfRows);
+		dbChangesTableValues= repHandler.getDatabaseChangesDeploymentStatus(null,0, TABLE_MAX_ROWS,totalNumberOfRows);
 		options = new HashMap<String, ArrayList<String>>();
 		options.put("lobs", repHandler.getLobs());
 		options.put("db_schemas", repHandler.getDatabaseSchemaIds());
 		//options.put("db_changes", repHandler.getNextDBChanges(10, null));
-		return new ModelAndView("ManageDBChanges", "options", options).addObject("dbChangesTableValues",gson.toJson(dbChangesTableValues)).addObject("dbChangesNoOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("dbChangesCurrentPage",1).addObject("dbChangesLobList", gson.toJson(repHandler.getLobs()));
+		return new ModelAndView("ManageDBChanges", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("dbChangesNoOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("dbChangesCurrentPage",1).addObject("dbChangesLobList", gson.toJson(repHandler.getLobs()));
 //		HashMap<String, ArrayList<String>> options = new HashMap<String, ArrayList<String>>();
 //		options.put("db_schemas", repHandler.getDatabaseSchemaIds());
 //		options.put("db_changes", repHandler.getNextDBChanges(10, null));
@@ -151,9 +155,9 @@ public class DBCADController {
 		Gson gson = new Gson();
 		JSONObject jsonResponse = new JSONObject();
 		//HashMap<String, ArrayList<String>> options;
-		ArrayList<HashMap<String, String>> dbChangesTableValues;
+		JSONArray dbChangesTableValues;
 		AtomicInteger totalNumberOfRows = new AtomicInteger();
-		dbChangesTableValues= repHandler.getDatabaseChangeLobsStatus(searchFilterJSON.isNull("generalFilter") ? null : searchFilterJSON.getString("generalFilter"),(page-1)*TABLE_MAX_ROWS, TABLE_MAX_ROWS,totalNumberOfRows);
+		dbChangesTableValues= repHandler.getDatabaseChangesDeploymentStatus(searchFilterJSON.isNull("generalFilter") ? null : searchFilterJSON.getString("generalFilter"),(page-1)*TABLE_MAX_ROWS, TABLE_MAX_ROWS,totalNumberOfRows);
 		jsonResponse.put("dbChangesTableValues", dbChangesTableValues);
 		jsonResponse.put("dbChangesLobList", repHandler.getLobs());
 		jsonResponse.put("dbChangesNoOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS));
@@ -231,16 +235,8 @@ public class DBCADController {
 		parameters.put("mysqlClientPath", "c:\\mysql.exe");
 		dbService.initializeDBService("vm-qa-acdb", 3306, "mysql",parameters);
 		dbService.runScript("Select * from mysql.user;"); */
-		if (markOnly){
-			String dbChangeId;
-			for (int i = 0; i < dbChanges.length(); i++) {
-				dbChangeId = dbChanges.getString(i);
-				repHandler.markDbChangeDeploymentStatus(dbChangeId, lobId, "DONE");
-			}
-		}
-		else{
-			(new DeployThread(repHandler,lobId,dbChanges)).start();
-		}
+		
+		(new DeployThread(repHandler,lobId,dbChanges,markOnly)).start();
 		
 		return "JOB Was sent";
 	}
@@ -252,9 +248,30 @@ public class DBCADController {
 		JSONObject jsonResponse = new JSONObject();
 		String dbChangeId;
 		for (int i = 0; i < queryData.length(); i++) {
+			int numberOfNotOKStatuses = 0;
+			int numberOfdeployables = 0;
 			dbChangeId = queryData.getString(i);
-			jsonResponse.put(dbChangeId,
-					repHandler.checkDbChanges(dbChangeId, lobId));
+			JSONObject deploymentStatus = repHandler.getDbChangeDeploymentStatus(dbChangeId, lobId);
+			if (deploymentStatus.has(lobId)){
+				Iterator<String> groupKeys =  deploymentStatus.getJSONObject(lobId).keys();
+				while (groupKeys.hasNext()){
+					String currentGroupId = groupKeys.next();
+					Iterator<String> dbKeys = deploymentStatus.getJSONObject(lobId).getJSONObject(currentGroupId).keys();
+					while (dbKeys.hasNext()){
+						 String currentDbId = dbKeys.next();
+						 if (deploymentStatus.getJSONObject(lobId).getJSONObject(currentGroupId).getInt(currentDbId) != DBCADController.OK_STATUS){
+							 numberOfNotOKStatuses++;
+						 }
+						 numberOfdeployables++;
+					}
+				}
+			}
+			if (numberOfdeployables == 0 || numberOfNotOKStatuses > 0){
+				jsonResponse.put(dbChangeId,DBCADController.ERROR_STATUS);
+			}
+			else{
+				jsonResponse.put(dbChangeId,DBCADController.OK_STATUS);
+			}
 		}
 		return jsonResponse.toString();
 	}

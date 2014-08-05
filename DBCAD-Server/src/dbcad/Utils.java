@@ -1,5 +1,6 @@
 package dbcad;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -25,8 +26,7 @@ public class Utils {
     */
     static public Properties readProperties(String filename) throws IOException{
         Properties props = new Properties();
-        ClassLoader loader = Thread.currentThread().getContextClassLoader();
-        InputStream stream = loader.getResourceAsStream(filename);
+        FileInputStream stream = new FileInputStream(filename);
         props.load(stream);
         return props;
     }

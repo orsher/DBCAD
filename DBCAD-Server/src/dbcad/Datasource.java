@@ -24,20 +24,28 @@ public class Datasource {
 
     private Datasource() throws IOException, SQLException, PropertyVetoException {
         // load datasource properties
-        log.info("Reading datasource.properties from classpath");
-        props = Utils.readProperties("datasource.properties");
-        cpds = new ComboPooledDataSource();
-        cpds.setJdbcUrl(props.getProperty("jdbcUrl"));
-        cpds.setUser(props.getProperty("username"));
-        cpds.setPassword(props.getProperty("password"));
-        cpds.setDriverClass(props.getProperty("driverClass"));
-        cpds.setInitialPoolSize(new Integer((String) props.getProperty("initialPoolSize")));
-        cpds.setAcquireIncrement(new Integer((String) props.getProperty("acquireIncrement")));
-        cpds.setMaxPoolSize(new Integer((String) props.getProperty("maxPoolSize")));
-        cpds.setMinPoolSize(new Integer((String) props.getProperty("minPoolSize")));
-        cpds.setMaxStatements(new Integer((String) props.getProperty("maxStatements")));
-        cpds.setIdleConnectionTestPeriod(new Integer((String)props.getProperty("idleConnectionTestPeriod")));
-
+    	try{
+    		final String configPath = System.getenv("DBCAD_CONFIG_PATH");
+	        log.info("Reading datasource.properties from "+configPath+"datasource.properties");
+	        System.out.println("Reading datasource.properties from "+configPath+"datasource.properties");
+	        props = Utils.readProperties(configPath+"datasource.properties");
+	        cpds = new ComboPooledDataSource();
+	        cpds.setJdbcUrl(props.getProperty("jdbcUrl"));
+	        cpds.setUser(props.getProperty("username"));
+	        cpds.setPassword(props.getProperty("password"));
+	        cpds.setDriverClass(props.getProperty("driverClass"));
+	        cpds.setInitialPoolSize(new Integer((String) props.getProperty("initialPoolSize")));
+	        cpds.setAcquireIncrement(new Integer((String) props.getProperty("acquireIncrement")));
+	        cpds.setMaxPoolSize(new Integer((String) props.getProperty("maxPoolSize")));
+	        cpds.setMinPoolSize(new Integer((String) props.getProperty("minPoolSize")));
+	        cpds.setMaxStatements(new Integer((String) props.getProperty("maxStatements")));
+	        cpds.setIdleConnectionTestPeriod(new Integer((String)props.getProperty("idleConnectionTestPeriod")));
+    	}
+    	catch(Exception e){
+    		System.out.println("Error: can't load configuration files");
+    		e.printStackTrace();
+    		throw e;
+    	}
         Connection testConnection = null;
         Statement testStatement = null;
 

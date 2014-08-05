@@ -5,7 +5,7 @@
 <%@ taglib prefix="sec" uri="http://www.springframework.org/security/tags" %>
 <html>
 <head>
-    <title>Add Database Types</title>
+    <title>Manage Database Changes</title>
     <link href="css/dbcad.css" rel="stylesheet" type="text/css" />
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
@@ -25,11 +25,11 @@
        		 	$('#create_db_change_div').addClass("Display");
        		}
         	function openEditViewWindow(db_change_id){
-        		$.each(dbChangesTableValues, function(){
-        			if (this['db_request_id'] == db_change_id){
-        				$('#edit_view_db_change_div #db_change_id_text_field').val(this['db_request_id']);
-                		$('#edit_view_db_change_div #schema_select').val(this.schema_id);
-                		$('#edit_view_db_change_div #db_change_text').val(this.db_request_code);	
+        		$.each(dbChangesTableValues, function(key,dbChange){
+        			if (dbChange.db_change_id == db_change_id){
+        				$('#edit_view_db_change_div #db_change_id_text_field').val(dbChange.db_change_id);
+                		$('#edit_view_db_change_div #schema_select').val(dbChange.schema_id);
+                		$('#edit_view_db_change_div #db_change_text').val(dbChange.db_request_code);	
         			}
         		});
        		 	$('#edit_view_db_change_div').addClass("Display");
@@ -103,21 +103,71 @@
 	        function fillDBChangesTable(){
 	        	$('#db-changes-table-body').empty();
 	        	var retValue="";
-        		$.each(dbChangesTableValues, function(){
-        			var dbChangeRow = this;
-        			retValue += '<tr class="table_row" title=\''+this.db_request_code+'\'>' +
+        		$.each(dbChangesTableValues, function(key, value){
+        			var deploymentStatus;
+        			retValue += '<tr class="table_row" title=\''+value.db_request_code+'\'>' +
         			<sec:authorize access="hasRole('ROLE_ADMIN')"> '<td><input type="checkbox"' + </sec:authorize>
-        			' class="db_change_checkbox" value='+this['db_request_id']+' id='+this['db_request_id']+'></td>'+
+        			' class="db_change_checkbox" value='+value.db_change_id+' id='+value.db_change_id+'></td>'+
         			'<td '+
-        			<sec:authorize access="hasRole('ROLE_ADMIN')"> 'onclick=openEditViewWindow(\''+this['db_request_id']+'\')' + </sec:authorize>
-        			'>'+this['db_request_id']+'</td>'+
-                    '<td class="dividing-column">'+this['schema_id']+'</td>';
-                    $.each(dbChangesLobList,function(key,value){
-                    	if (dbChangeRow[value] == null){
+        			<sec:authorize access="hasRole('ROLE_ADMIN')"> 'onclick=openEditViewWindow(\''+value.db_change_id+'\')' + </sec:authorize>
+        			'>'+value.db_change_id+'</td>'+
+                    '<td class="dividing-column">'+value.schema_id+'</td>';
+                    deploymentStatus=value.deployment_status;
+                    $.each(dbChangesLobList,function(lob_key,lob_value){
+                    	if (deploymentStatus[lob_value] == null){
                     		retValue += '<td>---</td>';
                     	}
                     	else{
-                    		retValue += '<td><div onclick="getLog(\''+dbChangeRow['db_request_id']+'\',\''+value+'\')">'+dbChangeRow[value]+'</div></td>';
+                    		var tooltip="";
+                    		var failed=0;
+                    		var succeeded=0;
+                    		var running=0;
+                    		var na=0;
+                    		$.each(deploymentStatus[lob_value], function(dbGroupId,dbGroupData){
+                    			$.each(dbGroupData,function(dbId,dbDataValue){
+                    				dbData = JSON.stringify(dbDataValue);
+                    				if (dbData == -2){
+                    					tooltip+=dbGroupId+" - "+dbId+" : N/A\n";
+                    					na++;
+                    				}
+                    				else if (dbData == 0){
+                    					tooltip+=dbGroupId+" - "+dbId+" : Succeeded\n";
+                    					succeeded++;
+                    				}
+                    				else if (dbData == -1){
+                    					tooltip+=dbGroupId+" - "+dbId+" : Running\n";
+                    					running++;
+                    				}
+                    				else{
+                    					tooltip+=dbGroupId+" - "+dbId+" : Failed\n";
+                    					failed++;
+                    				}
+                    			});
+                    		});
+                    		if (running > 0){
+                    			retValue += '<td><div title="'+tooltip+'" onclick="getLog(\''+value.db_change_id+'\',\''+lob_value+'\')"><img src="css/images/Status-executing.gif" style="width: 20px; height: 20px;"></div></td>';
+                    		}
+                    		else if (na > 0 && succeeded == 0 && failed == 0){
+                    			retValue += '<td></td>';
+                    		}
+                    		else if (na > 0 && succeeded > 0){
+                    			retValue += '<td><div title="'+tooltip+'" onclick="getLog(\''+value.db_change_id+'\',\''+lob_value+'\')"><img src="css/images/Status-Warning.png" style="width: 20px; height: 20px;"></div></td>';
+                    		} 
+                    		else if (na > 0 && failed > 0){
+                    			retValue += '<td><div title="'+tooltip+'" onclick="getLog(\''+value.db_change_id+'\',\''+lob_value+'\')"><img src="css/images/Status-Fail.png" style="width: 20px; height: 20px;"></div></td>';
+                    		}
+                    		else if (failed > 0 && succeeded >0){
+                    			retValue += '<td><div title="'+tooltip+'" onclick="getLog(\''+value.db_change_id+'\',\''+lob_value+'\')"><img src="css/images/Status-Warning.png" style="width: 20px; height: 20px;"></div></td>';
+                    		}
+                    		else if (failed > 0){
+                    			retValue += '<td><div title="'+tooltip+'" onclick="getLog(\''+value.db_change_id+'\',\''+lob_value+'\')"><img src="css/images/Status-Fail.png" style="width: 20px; height: 20px;"></div></td>';
+                    		}
+                    		else if (succeeded > 0){
+                    			retValue += '<td><div title="'+tooltip+'" onclick="getLog(\''+value.db_change_id+'\',\''+lob_value+'\')"><img src="css/images/Status-OK.png" style="width: 20px; height: 20px;"></div></td>';
+                    		}
+                    		else{
+                    			retValue += '<td>---</td>';	
+                    		}
                     	}
                     });
         		});

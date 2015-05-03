@@ -44,10 +44,17 @@
 	  <listener-class>org.springframework.web.context.ContextLoaderListener</listener-class>  
 	 </listener> 
 	 
-	 <context-param>  
+<!-- 	 <context-param>   -->
+<!-- 	  <param-name>contextConfigLocation</param-name>   -->
+<!-- 	  <param-value> -->
+<!-- 	   /WEB-INF/spring-security.xml -->
+<!-- 	  </param-value>   -->
+<!-- 	 </context-param> -->
+	 
+	  <context-param>  
 	  <param-name>contextConfigLocation</param-name>  
 	  <param-value>
-	   /WEB-INF/spring-security.xml
+	   /WEB-INF/spring-servlet.xml
 	  </param-value>  
 	 </context-param>
 	 
@@ -74,4 +81,5 @@
 	 <session-config>
 	  <session-timeout>240</session-timeout>
 	 </session-config>
+	 
 </web-app>

@@ -19,8 +19,8 @@ import org.jasypt.util.text.StrongTextEncryptor;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.security.access.prepost.PreAuthorize;
-//import org.springframework.security.access.annotation.Secured;
-//import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.access.annotation.Secured;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -43,6 +43,7 @@ public class DBCADController {
 	public final static int OK_STATUS =0;
 	public final static int RUNNING_STATUS = -1;
 	public final static int NA_STATUS = -2;
+	public final static String ADMIN_GROUP_NAME = "DBTeam";
 	private static RepositoryHandler repHandler;
 	private static final int TABLE_MAX_ROWS = 10; 
 
@@ -72,8 +73,7 @@ public class DBCADController {
 		return new ModelAndView("index");
 	}
 	
-	//@PreAuthorize("hasRole('ROLE_ADMIN')")
-	//@Secured("ROLE_ADMIN")
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/manage-databases", method = RequestMethod.GET)
 	public ModelAndView manageDatabases() {
 		Gson gson = new Gson();
@@ -116,10 +116,10 @@ public class DBCADController {
 		return mav;
 	}
 
-	@PreAuthorize("hasRole('ROLE_ADMIN')")
-	//@Secured("sss")
+	
 	@RequestMapping(value = "/manage-db-changes", method = RequestMethod.GET)
 	public ModelAndView ManageDBChangesView() {
+		System.out.println("USER: "+ SecurityContextHolder.getContext().getAuthentication());
 		Gson gson = new Gson();
 		HashMap<String, ArrayList<String>> options;
 		JSONArray dbChangesTableValues;
@@ -169,7 +169,7 @@ public class DBCADController {
 		//return new ModelAndView("ManageDBChangesTable", "options", options).addObject("dbChangesTableValues",dbChangesTableValues).addObject("noOfPages",Math.ceil(1.0*totalNumberOfRows.intValue()/TABLE_MAX_ROWS)).addObject("currentPage",page);
 	}
 	
-	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/getDbSchemasTablePage", method = RequestMethod.POST)
 	public @ResponseBody String getDBSchemasTablePage(@RequestParam(value = "page") int page,@RequestParam(value = "searchFilter", defaultValue = "{}") JSONObject searchFilterJSON) {
 		Gson gson = new Gson();
@@ -183,6 +183,7 @@ public class DBCADController {
 		return jsonResponse.toString();
 	}
 	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/getDbInstancesTablePage", method = RequestMethod.POST)
 	public @ResponseBody String getDBInstancesTablePage(@RequestParam(value = "page") int page,@RequestParam(value = "searchFilter", defaultValue = "{}") JSONObject searchFilterJSON) {
 		Gson gson = new Gson();
@@ -196,6 +197,7 @@ public class DBCADController {
 		return jsonResponse.toString();
 	}
 	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/getDbGroupsTablePage", method = RequestMethod.POST)
 	public @ResponseBody String getDBGroupsTablePage(@RequestParam(value = "page") int page,@RequestParam(value = "searchFilter", defaultValue = "{}") JSONObject searchFilterJSON) {
 		Gson gson = new Gson();
@@ -209,7 +211,7 @@ public class DBCADController {
 		return jsonResponse.toString();
 	}
 
-	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/deploy/{lob_id}", method = RequestMethod.PUT)
 	public @ResponseBody
 	String deployDBChangesOnLOB(@PathVariable("lob_id") String lobId,
@@ -241,6 +243,7 @@ public class DBCADController {
 		return "JOB Was sent";
 	}
 
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/query/{lob_id}", method = RequestMethod.GET)
 	public @ResponseBody
 	String queryLobForDBChanges(@PathVariable("lob_id") String lobId,
@@ -276,6 +279,7 @@ public class DBCADController {
 		return jsonResponse.toString();
 	}
 
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_type", method = RequestMethod.PUT)
 	public @ResponseBody
 	String addDBType(@ModelAttribute(value = "db_type") DBType dbType,
@@ -295,6 +299,7 @@ public class DBCADController {
 		return returnText;
 	}
 
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_type/{db_type_id}", method = RequestMethod.DELETE)
 	public @ResponseBody
 	String deleteDBType(@PathVariable("db_type_id") String dbTypeId) {
@@ -308,6 +313,7 @@ public class DBCADController {
 		return returnText;
 	}
 
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_instance/{db_instance_id}", method = RequestMethod.PUT)
 	public @ResponseBody
 	String addDBInstance(@PathVariable("db_instance_id") String dbInstanceId, @RequestParam(value = "dbPluginType") String dbPluginType, @RequestParam(value = "dbHost") String dbHost,
@@ -344,6 +350,7 @@ public class DBCADController {
 		return returnText;
 	}
 	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_instance/{db_instance_id}", method = RequestMethod.POST)
 	public @ResponseBody
 	String saveDBInstance(@PathVariable("db_instance_id") String dbInstanceId, @RequestParam(value = "dbPluginType") String dbPluginType,@RequestParam(value = "dbHost") String dbHost,
@@ -380,6 +387,7 @@ public class DBCADController {
 		return returnText;
 	}
 
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_instance/{db_instance_id}", method = RequestMethod.DELETE)
 	public @ResponseBody
 	String deleteDBInstance(@PathVariable("db_instance_id") String dbInstanceId) {
@@ -393,6 +401,7 @@ public class DBCADController {
 		return returnText;
 	}
 
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_change/{schema_id}/{db_change_id}", method = RequestMethod.PUT)
 	public @ResponseBody
 	String addDBChange(
@@ -410,6 +419,7 @@ public class DBCADController {
 		return returnText;
 	}
 
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_change/{schema_id}/{db_change_id}", method = RequestMethod.POST)
 	public @ResponseBody
 	String saveDBChange(
@@ -427,6 +437,7 @@ public class DBCADController {
 		return returnText;
 	}
 	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_change/{db_change_id}", method = RequestMethod.DELETE)
 	public @ResponseBody
 	String deleteDBChange(@PathVariable("db_change_id") String dbChangeId) {
@@ -440,6 +451,7 @@ public class DBCADController {
 		return returnText;
 	}
 	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_group/{db_group_id}", method = RequestMethod.PUT)
 	public @ResponseBody
 	String addDBGroup(@RequestParam(value = "dbTypeId") String dbTypeId,@PathVariable("db_group_id") String dbGroupId,@RequestParam("dbLobList") JSONArray dbLobList,@RequestParam("dbInstances") JSONObject dbInstances) {
@@ -458,6 +470,7 @@ public class DBCADController {
 		return returnText;
 	}
 
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_group/{db_group_id}", method = RequestMethod.DELETE)
 	public @ResponseBody
 	String deleteDBGroup(@PathVariable("db_group_id") String dbGroupId) {
@@ -471,18 +484,21 @@ public class DBCADController {
 		return returnText;
 	}
 	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_instance", method = RequestMethod.GET)
 	public @ResponseBody
 	String findDBInstances(@RequestParam(value = "dbPluginType") String dbPluginType) {
 		return (new JSONArray(repHandler.getDatabaseInstanceIds(dbPluginType))).toString();
 	}
 	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_group", method = RequestMethod.GET)
 	public @ResponseBody
 	String findDBGroups(@RequestParam(value = "dbTypeId") String dbTypeId) {
 		return (new JSONArray(repHandler.getDatabaseGroupIds(dbTypeId))).toString();
 	}
 	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_schema/{schema_id}", method = RequestMethod.PUT)
 	public @ResponseBody
 	String addSchema(@RequestParam(value = "dbTypeId") String dbTypeId,@PathVariable("schema_id") String schemaId,@RequestParam("dbGroupList") JSONArray dbGroupList,@RequestParam(value = "schemaName") String schemaName) {
@@ -504,6 +520,7 @@ public class DBCADController {
 		return returnText;
 	}
 	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/db_schema/{schema_id}", method = RequestMethod.DELETE)
 	public @ResponseBody
 	String deleteDBSchema(@PathVariable("schema_id") String dbSchemaId) {
@@ -517,6 +534,7 @@ public class DBCADController {
 		return returnText;
 	}
 	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/saveDbPluginConfig", method = RequestMethod.POST)
 	public @ResponseBody
 	String saveDbPluginConfig(@RequestParam("dbPluginType") String dbPluginType,@RequestParam("params") JSONObject dbPluginParams) {
@@ -546,11 +564,13 @@ public class DBCADController {
 		}
 	}
 	
+	@PreAuthorize("hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)")
 	@RequestMapping(value = "/rest/getLog", method = RequestMethod.POST)
 	public @ResponseBody
 	String getLog(@RequestParam("db_change_id") String dbChangeId, @RequestParam("lob_id") String lobId){
 		return (repHandler.getDeploymentLog(dbChangeId,lobId)).toString();
 	}
+	
 	
 	public ArrayList<DatabasePluginConfig> getDBPluginsConfig(){
 		ArrayList<DatabasePluginConfig> pluginsConfig = new ArrayList<DatabasePluginConfig>(); 

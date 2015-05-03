@@ -8,6 +8,11 @@
     <link href="css/dbcad.css" rel="stylesheet" type="text/css" />
         <script src="scripts/jquery-2.0.3.min.js"></script>
         <script type="text/javascript">
+	        $('#toggle-login').click(function(){
+	        	  $('#login').toggle();
+	        	  $('#j_ajax_username').focus();
+	        	  setCallbackRefresh();
+	        });
         	var instanceTableValuesJson=${instance_table_values_json};
         	var groupTableValuesJson=${group_table_values_json};
         	var schemaTableValuesJson=${schema_table_values_json};
@@ -218,11 +223,10 @@
 			        url: "rest/db_type",
 			        data: "dbPluginType=" + dbPluginType + "&dbRole=" + dbRole + "&_method=PUT",
 			        success: function(response){
-				        // we have the response
-				        $('#info').html(response);
-				        $('#types-table-body').append('<tr class="table_row"><td>'
-								+dbVendor+'</td><td>'+dbRole+'</td>'+
-								'<td><input type="button" value="Delete" onclick="doDeleteDBType(\''+response+'\',this)"></td></tr>');
+			        	var cllbck = 'addDbType()';
+			        	if (verifyAuthentication(response,cllbck)){
+			        		//filterDBTypes();
+			        	}
 				        
 			        },
 			        error: function(e){
@@ -247,8 +251,11 @@
 			        url: "rest/db_instance/"+dbId,
 			        data: "dbPluginType=" + dbPluginType + "&dbHost=" + dbHost + "&dbPort=" + dbPort + "&dbSid=" + dbSid + "&pluginInstanceParameters="+JSON.stringify(pluginInstanceParameters)+"&_method=PUT",
 			        success: function(response){
-			        	closeCreateInstanceWindow()
-			        	getInstancesPageNumber(currentManageInstancePage);
+			        	var cllbck = 'addDbInstance()';
+			        	if (verifyAuthentication(response,cllbck)){
+				        	closeCreateInstanceWindow()
+				        	getInstancesPageNumber(currentManageInstancePage);
+			        	}
 			        },
 			        error: function(e){
 			        	alert('Error: ' + e.responseText);
@@ -270,8 +277,11 @@
 			        url: "rest/db_instance/"+dbId,
 			        data: "dbPluginType=" + dbPluginType + "&dbHost=" + dbHost + "&dbPort=" + dbPort + "&dbSid=" + dbSid + "&pluginInstanceParameters="+JSON.stringify(pluginInstanceParameters)+"&_method=POST",
 			        success: function(response){
-			        	closeEditInstanceWindow();
-			        	getInstancesPageNumber(currentManageInstancePage);
+			        	var cllbck = 'saveDbInstance()';
+			        	if (verifyAuthentication(response,cllbck)){
+				        	closeEditInstanceWindow();
+				        	getInstancesPageNumber(currentManageInstancePage);
+			        	}
 			        },
 			        error: function(e){
 			        	alert('Error: ' + e.responseText);
@@ -287,10 +297,11 @@
 			        //data: "db_type_id=" + dbTypeId + "&_method=DELETE",
 			        data: "_method=DELETE",
 			        success: function(response){
-				        // we have the response
-				        $('#info').html(response);
-				        var p=object.parentNode.parentNode;
-				        p.parentNode.removeChild(p);
+			        	var cllbck = 'doDeleteDBType('+dbTypeId+','+object+')';
+			        	if (verifyAuthentication(response,cllbck)){
+					        var p=object.parentNode.parentNode;
+					        p.parentNode.removeChild(p);
+			        	}
 			        },
 			        error: function(e){
 			        	$('#info').html("error"+dbTypeId);
@@ -306,10 +317,11 @@
 			        //data: "db_type_id=" + dbTypeId + "&_method=DELETE",
 			        data: "_method=DELETE",
 			        success: function(response){
-				        // we have the response
-				        $('#info').html(response);
-				        var p=object.parentNode.parentNode;
-				        p.parentNode.removeChild(p);
+			        	var cllbck = 'doDeleteDBInstance('+dbId+','+object+')';
+			        	if (verifyAuthentication(response,cllbck)){
+					        var p=object.parentNode.parentNode;
+					        p.parentNode.removeChild(p);
+			        	}
 			        },
 			        error: function(e){
 			        	$('#info').html("error"+dbId);
@@ -334,11 +346,10 @@
 			        url: "rest/db_group/"+dbGroupId,
 			        data: "dbTypeId=" + dbTypeId + "&dbLobList=["+ dbLobList +"]&dbInstances="+JSON.stringify(dbInstancesJson)+"&_method=PUT",
 			        success: function(response){
-				        // we have the response
-				        $('#info').html(response);
-				        $('#groups-table-body').append('<tr class="table_row"><td>'
-								+dbGroupId+'</td><td>'+dbTypeId+'</td><td>'+dbLobList+'</td>'+
-								'<td><input type="button" value="Delete" onclick="deleteDBGroup(\''+dbGroupId+'\',this)"></td></tr>');
+			        	var cllbck = 'addDbGroup()';
+			        	if (verifyAuthentication(response,cllbck)){
+			        		filterDBGroups();
+			        	}
 				        
 			        },
 			        error: function(e){
@@ -353,10 +364,10 @@
 			        url: "rest/db_group/"+dbGroupId,
 			        data: "_method=DELETE",
 			        success: function(response){
-				        // we have the response
-				        $('#info').html(response);
-				        var p=object.parentNode.parentNode;
-				        p.parentNode.removeChild(p);
+			        	var cllbck = 'deleteDBGroup('+dbGroupId+','+object+')';
+			        	if (verifyAuthentication(response,cllbck)){
+			        		filterDBGroups();
+			        	}
 			        },
 			        error: function(e){
 			        	$('#info').html("error");
@@ -370,9 +381,12 @@
 			        url: "rest/db_group/",
 			        data: "_method=GET"+"&dbTypeId="+$("#new_schmea_type_select option:selected").text(),
 			        success: function(response){
-			        	var dbGroupIds = JSON.parse(response);
-			        	$("#new_schema_db_groups_select").empty();
-			        	$.each(dbGroupIds,function(index,value){$("#new_schema_db_groups_select").append('<option val="'+value+'">'+value+'</option>');});
+			        	var cllbck = 'refreshAvailableDBGroups()';
+			        	if (verifyAuthentication(response,cllbck)){
+				        	var dbGroupIds = JSON.parse(response);
+				        	$("#new_schema_db_groups_select").empty();
+				        	$.each(dbGroupIds,function(index,value){$("#new_schema_db_groups_select").append('<option val="'+value+'">'+value+'</option>');});
+			        	}
 			        },
 			        error: function(e){
 			        	$('#info').html("error");
@@ -393,7 +407,11 @@
 			        url: "rest/db_schema/"+dbSchemaId,
 			        data: "dbTypeId=" + dbTypeId + "&dbGroupList=["+ dbGroupList +"]&schemaName="+dbSchemaName+"&_method=PUT",
 			        success: function(response){
-			        	getSchemasPageNumber(currentManageSchemaPage);
+			        	var cllbck = 'addDbSchema()';
+			        	if (verifyAuthentication(response,cllbck)){
+			        		getSchemasPageNumber(currentManageSchemaPage);
+			        		closeCreateSchemaWindow()
+			        	}
 			        },
 			        error: function(e){
 			        	$('#info').html("error");
@@ -407,7 +425,10 @@
 			        url: "rest/db_schema/"+dbSchemaId,
 			        data: "_method=DELETE",
 			        success: function(response){
+			        	var cllbck = 'deleteDBSchema('+dbSchemaId+','+object+')';
+			        	if (verifyAuthentication(response,cllbck)){
 			        	 getSchemasPageNumber(currentManageSchemaPage);
+			        	}
 			        },
 			        error: function(e){
 			        	$('#info').html("error");
@@ -420,11 +441,14 @@
 			        url: "getDbSchemasTablePage",
 			        data: "page="+i+"&searchFilter="+JSON.stringify(schemasSearchFilter),
 			        success: function(response){
-			        	var jsonResponse = JSON.parse(response);
-			        	schemasNumOfPages = jsonResponse["schemasNumOfPages"];
-			        	currentManageSchemaPage= jsonResponse["schemasCurrentPage"];
-			        	schemaTableValuesJson = JSON.parse(jsonResponse["schemaTableValues"]);
-			        	fillDBSchemasTable();
+			        	var cllbck = 'getSchemasPageNumber('+i+')';
+			        	if (verifyAuthentication(response,cllbck)){
+				        	var jsonResponse = JSON.parse(response);
+				        	schemasNumOfPages = jsonResponse["schemasNumOfPages"];
+				        	currentManageSchemaPage= jsonResponse["schemasCurrentPage"];
+				        	schemaTableValuesJson = JSON.parse(jsonResponse["schemaTableValues"]);
+				        	fillDBSchemasTable();
+			        	}
 			        },
 			        error: function(e){
 			        	alert('Error: ' + e.responseText);
@@ -438,11 +462,14 @@
 			        url: "getDbInstancesTablePage",
 			        data: "page="+i+"&searchFilter="+JSON.stringify(instancesSearchFilter),
 			        success: function(response){
-			        	var jsonResponse = JSON.parse(response);
-			        	instancesNumOfPages = jsonResponse["instancesNumOfPages"];
-			        	currentManageInstancePage= jsonResponse["instancesCurrentPage"];
-			        	instanceTableValuesJson = JSON.parse(jsonResponse["instanceTableValues"]);
-			        	fillInstancesTable();
+			        	var cllbck = 'getInstancesPageNumber('+i+')';
+			        	if (verifyAuthentication(response,cllbck)){
+				        	var jsonResponse = JSON.parse(response);
+				        	instancesNumOfPages = jsonResponse["instancesNumOfPages"];
+				        	currentManageInstancePage= jsonResponse["instancesCurrentPage"];
+				        	instanceTableValuesJson = JSON.parse(jsonResponse["instanceTableValues"]);
+				        	fillInstancesTable();
+			        	}
 			        },
 			        error: function(e){
 			        	alert('Error: ' + e.responseText);
@@ -456,11 +483,14 @@
 			        url: "getDbGroupsTablePage",
 			        data: "page="+i+"&searchFilter="+JSON.stringify(groupsSearchFilter),
 			        success: function(response){
-			        	var jsonResponse = JSON.parse(response);
-			        	groupsNumOfPages = jsonResponse["groupsNumOfPages"];
-			        	currentManageGroupPage= jsonResponse["groupsCurrentPage"];
-			        	groupTableValuesJson = JSON.parse(jsonResponse["groupTableValues"]);
-			        	fillDBGroupsTable();
+			        	var cllbck = 'getGroupsPageNumber('+i+')';
+			        	if (verifyAuthentication(response,cllbck)){
+				        	var jsonResponse = JSON.parse(response);
+				        	groupsNumOfPages = jsonResponse["groupsNumOfPages"];
+				        	currentManageGroupPage= jsonResponse["groupsCurrentPage"];
+				        	groupTableValuesJson = JSON.parse(jsonResponse["groupTableValues"]);
+				        	fillDBGroupsTable();
+			        	}
 			        },
 			        error: function(e){
 			        	alert('Error: ' + e.responseText);
@@ -481,6 +511,10 @@
 			        url: "saveDbPluginConfig",
 			        data: "dbPluginType="+dbPluginType+"&params="+JSON.stringify(params),
 			        success: function(response){
+			        	var cllbck = 'SaveDBPluginConfig('+dbPluginType+')';
+			        	if (verifyAuthentication(response,cllbck)){
+			        		
+			        	}
 			        },
 			        error: function(e){
 			        }
@@ -527,6 +561,15 @@
        		}
         	function closeCreateSchemaWindow(){
        		 	$('#create_db_schema_div').removeClass("Display");
+       		}
+        	function openLoginWindow(){
+        		$('#login_div').show();
+        		$('#logout_div').hide();
+       		 	$('#login').show();
+       		 	$('#j_ajax_username').focus();
+       		}
+        	function closeLoginWindow(){
+       		 	$('#login').hide();
        		}
         	function setNewInstancePluginTypeParametersInput(){
         		$('#create_db_instance_div div').each(function(){
@@ -578,10 +621,13 @@
 			        url: "rest/db_instance",
 			        data: "_method=GET"+"&dbPluginType="+$("#new_group_type_select option:selected").attr("db_plugin_type"),
 			        success: function(response){
-			        	var dbInstanceIds = JSON.parse(response);
-			        	$("#new_group_instance_select").empty();
-			        	$("#new_group_selected_db_instances").empty();
-			        	$.each(dbInstanceIds,function(index,value){$("#new_group_instance_select").append('<option val="'+value+'">'+value+'</option>');});
+			        	var cllbck = 'refreshAvailableDBInstances()';
+			        	if (verifyAuthentication(response,cllbck)){
+				        	var dbInstanceIds = JSON.parse(response);
+				        	$("#new_group_instance_select").empty();
+				        	$("#new_group_selected_db_instances").empty();
+				        	$.each(dbInstanceIds,function(index,value){$("#new_group_instance_select").append('<option val="'+value+'">'+value+'</option>');});
+			        	}
 			        },
 			        error: function(e){
 			        	$('#info').html("error");
@@ -600,6 +646,70 @@
 	        	schemasSearchFilter.generalFilter = $('#schemasGeneralFilterText').val();
 	        	getSchemasPageNumber(1);
 	        }
+			function verifyAuthentication(data, cllBackString){
+				   //naive check - I put a string in the login form, so I check for existance
+				   if (isNaN(data) && (data.indexOf("j_spring_security_check")!= -1)){
+				      //if got here then data is a loginform => login required  
+				      $("#my_callback").val(cllBackString); 
+				  
+				      //show ajax login
+				      //Get the window height and width
+// 				      var winH = $(window).height();
+// 				      var winW = $(window).width();
+				               
+				      //Set the popup window to center
+// 				      $("#ajaxLogin").css('top',  winH/2-$("#ajaxLogin").height()/2);
+// 				      $("#ajaxLogin").css('left', winW/2-$("#ajaxLogin").width()/2);
+					  openLoginWindow();
+//				      $("#ajaxLogin").fadeIn(2000); 
+				      return false;
+				      } 
+				    // data is not a login form => return true to continue with function processing
+				    return true;    
+				}
+				
+				function setCallbackRefresh(){
+					 $("#my_callback").val("location.reload(true);");
+				}
+				
+				function ajaxLogin(){
+				     
+				    var my_callback = $("#my_callback").val(); // The original function which accessed the protected resource
+				    var user_pass = $("#j_ajax_password").val();
+				    var user_name = $("#j_ajax_username").val(); 
+				//Ajax login - we send credentials to j_spring_security_check (as in form based login
+				    $.ajax({
+				          url: "j_spring_security_check",    
+				          data: { j_username: user_name , j_password: user_pass }, 
+				          type: "POST",
+				          beforeSend: function (xhr) {
+				             xhr.setRequestHeader("X-Ajax-call", "true");
+				          },
+				          success: function(result) {       
+				          //if login is success, hide the login modal and
+				          //re-execute the function which called the protected resource
+				          //(#7 in the diagram flow)
+				          if (result == "ok") {
+				        	closeLoginWindow();
+				            $("#ajax_login_error").html("");
+				            if (my_callback!=null && my_callback!='undefined' && my_callback!=''){
+				            		eval(my_callback.replace(/_/g,'"'));
+				            		location.reload(true);
+				            }
+				             
+				            return true;
+				          }else {           
+				             
+				            $("#ajax_login_error").html('<span  class="alert display_b clear_b centeralign">Bad user/password</span>') ;
+				            return false;           
+				        }
+				    },
+				    error: function(XMLHttpRequest, textStatus, errorThrown){
+				        $("#ajax_login_error").html("Bad user/password") ;
+				        return false; 
+				    }
+				});
+				}
         </script>
 </head>
 <body onload="load()">

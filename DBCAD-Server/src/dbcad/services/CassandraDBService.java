@@ -31,6 +31,7 @@ public class CassandraDBService extends DBService {
 		errorStrings.add("Warning: unreachable nodes");
 		errorStrings.add("java.lang.IllegalArgumentException");
 		errorStrings.add("java.net.UnknownHostException");
+		errorStrings.add("Not connected to a cassandra instance");
 	}
 	
 	@Override

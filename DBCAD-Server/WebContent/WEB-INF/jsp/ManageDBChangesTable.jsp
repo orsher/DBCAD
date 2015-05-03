@@ -5,7 +5,7 @@
 <table id="db-changes-table" class="table">
                 <thead>
                     <tr>
-                    <sec:authorize access="hasRole('ROLE_ADMIN')"> <th></th> </sec:authorize>
+                    <sec:authorize access="hasRole(T(dbcad.DBCADController).ADMIN_GROUP_NAME)"> <th></th> </sec:authorize>
                         
                         <th>Database Change ID</th>
                         <th class="dividing-column">Schema ID</th>

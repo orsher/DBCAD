@@ -27,8 +27,10 @@
   </build>
   
   <properties>
-		<spring.version>4.0.2.RELEASE</spring.version>
-		<spring.security.version>3.0.5.RELEASE</spring.security.version>
+<!-- 		<spring.version>4.0.3.RELEASE</spring.version> -->
+		<spring.version>3.2.8.RELEASE</spring.version>
+<!-- 		<spring.security.version>3.2.3.RELEASE</spring.security.version> -->
+		<spring.security.version>3.2.3.RELEASE</spring.security.version>
   </properties>
   
   <dependencies>
@@ -82,5 +84,21 @@
 				<artifactId>jasypt</artifactId>
 				<version>1.9.1</version>
 			</dependency>
+			<dependency>
+			      <groupId>javax.servlet</groupId>
+			      <artifactId>jstl</artifactId>
+			      <version>1.2</version>
+			</dependency>
+<!-- 			<dependency> -->
+<!-- 				<groupId>org.springframework.ldap</groupId> -->
+<!-- 				<artifactId>spring-ldap-core</artifactId> -->
+<!-- 				<version>2.0.2.RELEASE</version> -->
+<!-- 			</dependency> -->
+			<dependency>
+			    <groupId>org.springframework.security</groupId>
+			    <artifactId>spring-security-ldap</artifactId>
+			    <version>${spring.security.version}</version>
+			</dependency>
+			
   </dependencies>
 </project>

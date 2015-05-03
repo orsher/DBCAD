@@ -89,7 +89,6 @@ public class RepositoryHandler {
 			rs = preparedStatement.executeQuery();
 
 			while (rs.next()){
-				System.out.println(dbChangeId+ " LOB "+rs.getString("lob_id"));
 				//Case no inserted instances from the same lob id
 				if (!dbChangeDeploymentStatus.has(rs.getString("lob_id"))){
 					//Create the lob
@@ -100,7 +99,6 @@ public class RepositoryHandler {
 				if (!dbChangeDeploymentStatus.getJSONObject(rs.getString("lob_id")).has(rs.getString("db_group_id"))){
 					//Create the group
 					dbChangeDeploymentStatus.getJSONObject(rs.getString("lob_id")).put(rs.getString("db_group_id"), new JSONObject());
-					System.out.println(dbChangeId+ " Created new Group " +rs.getString("db_group_id"));
 				}
 				
 				//Add instance status

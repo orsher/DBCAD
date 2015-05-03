@@ -64,7 +64,7 @@ a.more:hover { text-decoration: none; color: #faca39; }
 
 #site_title { float: left; }
 #site_title h1 { margin: 0; padding: 0 }
-#site_title h1 a { display: block; width: 275px; height: 57px; color: #F60; no-repeat }
+#site_title h1 a { display: block; width: 275px; height: 57px; color: #d5a30b; no-repeat }
 /*#site_title h1 a { display: block; width: 275px; height: 57px; color: #F60; text-indent: -10000px; no-repeat }*/
 
 #twitter a{ float: right; font-weight: normal; display: block; padding: 13px 50px 13px 0; color: #f0c132; font-size: 18px; background: url(images/twitter.png)  no-repeat right center }
@@ -437,10 +437,6 @@ body.loading .modal_text {
     display:    none;
     position:   fixed;
     z-index:    1;
-    top:        0;
-    left:       0;
-    height:     100%;
-    width:      100%;
 /*     background: rgba( 255, 255, 255, .8 ) */
 /*                 50% 50%  */
 /*                 no-repeat; */
@@ -454,9 +450,9 @@ body.loading .modal_text {
     text-align: left;
     color: #FFFFFF;
 	top: 33%;
-	width: 33%;
-	left: 33%;
-	height: 33%;
+	width: 650px;
+	height: 300px;
+	margin-left: 125;
 	padding: 1%;
     background:rgba(80,80,80,0.9);
     -webkit-border-radius:8px;
@@ -524,7 +520,9 @@ ul.selected_options li img{
 }
 
 div#login_logout {
-	float: right;
+	width: 960px;
+	padding: 0 30px;
+	margin: 0 auto;
 }
 
 #view_log_div #log_tree_div {
@@ -544,4 +542,110 @@ div#login_logout {
 
 #log_tree_ul > li {
 	cursor: hand;
+}
+
+@import url(http://fonts.googleapis.com/css?family=Open+Sans:300,400,700);
+
+#login.*{margin:0;padding:0;}
+
+#login.body{
+  background:#567;
+  font-family:'Open Sans',sans-serif;
+}
+
+#login.button,#toggle-login.button{
+  width:100px;
+  background:#d5a30b;
+  display:block;
+  margin:0 200;
+  margin-top:1%;
+  padding:10px;
+  text-align:center;
+  text-decoration:none;
+  color:#fff;
+  cursor:pointer;
+  transition:background .3s;
+  -webkit-transition:background .3s;
+  
+
+}
+
+#login.button:hover{
+  background:#2288bb;
+}
+
+#login{
+  width:250px;
+  margin:0 auto;
+  margin-top:8px;
+  margin-bottom:2%;
+  transition:opacity 1s;
+  -webkit-transition:opacity 1s;
+  display: none;
+}
+
+#login_wrapper{
+	z-index: 1;
+  	position: fixed;
+  	right: 0;
+}
+
+
+#login #triangle{
+  width:0;
+  border-top:12x solid transparent;
+  border-right:12px solid transparent;
+  border-bottom:12px solid #d5a30b;
+  border-left:12px solid transparent;
+  margin:0 auto;
+}
+
+#login h1{
+  background:#d5a30b;
+  padding:20px 0;
+  font-size:140%;
+  font-weight:300;
+  text-align:center;
+  color:#fff;
+  margin: 0 0 0 0;
+}
+
+#login form{
+  background:#f0f0f0;
+  padding:6% 4%;
+}
+
+#login input[type="username"], #login input[type="password"]{
+  width:92%;
+  background:#fff;
+  margin-bottom:4%;
+  border:1px solid #ccc;
+  padding:4%;
+  font-family:'Open Sans',sans-serif;
+  font-size:95%;
+  color:#555;
+  
+}
+
+#login input[type="submit"]{
+  width:100%;
+  background:#4a4d51;
+  border:0;
+  padding:4%;
+  font-family:'Open Sans',sans-serif;
+  font-size:100%;
+  color:#fff;
+  cursor:pointer;
+  transition:background .3s;
+  -webkit-transition:background .3s;
+  
+}
+
+#login input[type="submit"]:hover{
+  background:#2288bb;
+}
+
+.change_id_adm:hover{
+	cursor: hand;
+	font-weight: bold;	
 }

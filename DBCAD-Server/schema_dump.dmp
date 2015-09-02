@@ -1,0 +1,285 @@
+-- MySQL dump 10.13  Distrib 5.6.15, for Linux (x86_64)
+--
+-- Host: localhost    Database: dbcad
+-- ------------------------------------------------------
+-- Server version       5.6.15-rel63.0-log
+
+/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
+/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
+/*!40101 SET NAMES utf8 */;
+/*!40103 SET @OLD_TIME_ZONE=@@TIME_ZONE */;
+/*!40103 SET TIME_ZONE='+00:00' */;
+/*!40014 SET @OLD_UNIQUE_CHECKS=@@UNIQUE_CHECKS, UNIQUE_CHECKS=0 */;
+/*!40014 SET @OLD_FOREIGN_KEY_CHECKS=@@FOREIGN_KEY_CHECKS, FOREIGN_KEY_CHECKS=0 */;
+/*!40101 SET @OLD_SQL_MODE=@@SQL_MODE, SQL_MODE='NO_AUTO_VALUE_ON_ZERO' */;
+/*!40111 SET @OLD_SQL_NOTES=@@SQL_NOTES, SQL_NOTES=0 */;
+
+--
+-- Current Database: `dbcad`
+--
+
+CREATE DATABASE /*!32312 IF NOT EXISTS*/ `dbcad` /*!40100 DEFAULT CHARACTER SET utf8 */;
+
+USE `dbcad`;
+
+--
+-- Table structure for table `database_group_instance_mapping`
+--
+
+DROP TABLE IF EXISTS `database_group_instance_mapping`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `database_group_instance_mapping` (
+  `db_group_id` varchar(50) NOT NULL,
+  `db_id` varchar(50) NOT NULL,
+  `deployable` bit(1) NOT NULL,
+  PRIMARY KEY (`db_group_id`,`db_id`),
+  KEY `grp_inst_map_db_id_fk` (`db_id`),
+  CONSTRAINT `grp_inst_map_db_group_id_fk` FOREIGN KEY (`db_group_id`) REFERENCES `database_groups` (`db_group_id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `grp_inst_map_db_id_fk` FOREIGN KEY (`db_id`) REFERENCES `database_instance` (`db_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `database_groups`
+--
+
+DROP TABLE IF EXISTS `database_groups`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `database_groups` (
+  `db_group_id` varchar(50) NOT NULL,
+  `db_type_id` varchar(50) NOT NULL,
+  PRIMARY KEY (`db_group_id`),
+  KEY `db_group_type_id_fk` (`db_type_id`),
+  CONSTRAINT `db_group_type_id_fk` FOREIGN KEY (`db_type_id`) REFERENCES `database_type` (`db_type_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `database_instance`
+--
+
+DROP TABLE IF EXISTS `database_instance`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `database_instance` (
+  `db_id` varchar(50) NOT NULL,
+  `host` varchar(50) DEFAULT NULL,
+  `port` int(11) NOT NULL,
+  `sid` varchar(10) DEFAULT NULL,
+  `db_plugin_type` varchar(20) DEFAULT NULL,
+  PRIMARY KEY (`db_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `database_type`
+--
+
+DROP TABLE IF EXISTS `database_type`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `database_type` (
+  `db_type_id` varchar(50) NOT NULL,
+  `db_vendor` varchar(20) NOT NULL,
+  `db_role` varchar(50) NOT NULL,
+  PRIMARY KEY (`db_type_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `db_change_status`
+--
+
+DROP TABLE IF EXISTS `db_change_status`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `db_change_status` (
+  `db_change_id` varchar(50) NOT NULL,
+  `db_group_id` varchar(50) NOT NULL,
+  `db_id` varchar(50) NOT NULL,
+  `status` int(11) DEFAULT NULL,
+  `update_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`db_change_id`,`db_group_id`,`db_id`),
+  KEY `db_req_stat_group_id_fk` (`db_group_id`),
+  KEY `db_ch_stat_db_id_fk` (`db_id`),
+  CONSTRAINT `db_ch_stat_db_id_fk` FOREIGN KEY (`db_id`) REFERENCES `database_instance` (`db_id`),
+  CONSTRAINT `db_ch_stat_group_id_fk` FOREIGN KEY (`db_group_id`) REFERENCES `database_groups` (`db_group_id`),
+  CONSTRAINT `db_ch_stat_req_id_fk` FOREIGN KEY (`db_change_id`) REFERENCES `db_requests` (`db_request_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `db_plugin_global_parameter_values`
+--
+
+DROP TABLE IF EXISTS `db_plugin_global_parameter_values`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `db_plugin_global_parameter_values` (
+  `plugin_name` varchar(50) NOT NULL,
+  `parameter_name` varchar(50) NOT NULL,
+  `parameter_value` varchar(200) DEFAULT NULL,
+  `dbcad_server` varchar(30) NOT NULL DEFAULT '',
+  PRIMARY KEY (`plugin_name`,`parameter_name`,`dbcad_server`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `db_plugin_global_parameters`
+--
+
+DROP TABLE IF EXISTS `db_plugin_global_parameters`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `db_plugin_global_parameters` (
+  `plugin_name` varchar(50) NOT NULL,
+  `parameter_name` varchar(50) NOT NULL,
+  PRIMARY KEY (`plugin_name`,`parameter_name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `db_plugin_instance_parameters`
+--
+
+DROP TABLE IF EXISTS `db_plugin_instance_parameters`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `db_plugin_instance_parameters` (
+  `db_id` varchar(50) NOT NULL,
+  `parameter_name` varchar(50) NOT NULL,
+  `parameter_value` varchar(100) DEFAULT NULL,
+  PRIMARY KEY (`db_id`,`parameter_name`),
+  CONSTRAINT `db_plugin_db_id_fk` FOREIGN KEY (`db_id`) REFERENCES `database_instance` (`db_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `db_request_status_to_drop`
+--
+
+DROP TABLE IF EXISTS `db_request_status_to_drop`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `db_request_status_to_drop` (
+  `db_request_id` varchar(50) NOT NULL,
+  `db_group_id` varchar(50) NOT NULL,
+  `status` varchar(10) DEFAULT NULL,
+  `update_date` datetime DEFAULT NULL,
+  PRIMARY KEY (`db_request_id`,`db_group_id`),
+  KEY `db_req_stat_group_id_fk` (`db_group_id`),
+  CONSTRAINT `db_req_stat_group_id_fk` FOREIGN KEY (`db_group_id`) REFERENCES `database_groups` (`db_group_id`),
+  CONSTRAINT `db_req_stat_req_id_fk` FOREIGN KEY (`db_request_id`) REFERENCES `db_requests` (`db_request_id`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `db_requests`
+--
+
+DROP TABLE IF EXISTS `db_requests`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `db_requests` (
+  `db_request_id` varchar(50) NOT NULL,
+  `schema_id` varchar(50) NOT NULL,
+  `code` text NOT NULL,
+  `created_timestamp` datetime DEFAULT NULL,
+  `last_changed_timestamp` datetime DEFAULT NULL,
+  PRIMARY KEY (`db_request_id`),
+  KEY `dbreq_schema_id_fk` (`schema_id`),
+  CONSTRAINT `dbreq_schema_id_fk` FOREIGN KEY (`schema_id`) REFERENCES `db_schema` (`schema_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `db_schema`
+--
+
+DROP TABLE IF EXISTS `db_schema`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `db_schema` (
+  `schema_id` varchar(50) NOT NULL,
+  `db_type_id` varchar(50) NOT NULL,
+  PRIMARY KEY (`schema_id`),
+  KEY `schema_db_type_id` (`db_type_id`),
+  CONSTRAINT `schema_db_type_id` FOREIGN KEY (`db_type_id`) REFERENCES `database_type` (`db_type_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `deployment_log`
+--
+
+DROP TABLE IF EXISTS `deployment_log`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `deployment_log` (
+  `db_request_id` varchar(50) DEFAULT NULL,
+  `db_id` varchar(50) DEFAULT NULL,
+  `run_date` datetime DEFAULT NULL,
+  `log` longtext
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `group_schema_mapping`
+--
+
+DROP TABLE IF EXISTS `group_schema_mapping`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `group_schema_mapping` (
+  `db_group_id` varchar(50) NOT NULL,
+  `schema_id` varchar(50) NOT NULL,
+  `schema_name` varchar(50) NOT NULL,
+  PRIMARY KEY (`db_group_id`,`schema_id`,`schema_name`),
+  UNIQUE KEY `grp_sch_map_grpid_schid_uk` (`db_group_id`,`schema_id`),
+  KEY `grp_sch_map_sch_id_fk` (`schema_id`),
+  CONSTRAINT `grp_sch_map_sch_id_fk` FOREIGN KEY (`schema_id`) REFERENCES `db_schema` (`schema_id`) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `lob_group_mapping`
+--
+
+DROP TABLE IF EXISTS `lob_group_mapping`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `lob_group_mapping` (
+  `lob_id` varchar(50) NOT NULL,
+  `db_group_id` varchar(50) NOT NULL,
+  PRIMARY KEY (`lob_id`,`db_group_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `lobs`
+--
+
+DROP TABLE IF EXISTS `lobs`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `lobs` (
+  `lob_id` varchar(50) NOT NULL,
+  `sequence_number` int(11) NOT NULL,
+  PRIMARY KEY (`lob_id`),
+  UNIQUE KEY `sequence_number` (`sequence_number`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+/*!40101 SET character_set_client = @saved_cs_client */;
+/*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
+
+/*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
+/*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;
+/*!40014 SET UNIQUE_CHECKS=@OLD_UNIQUE_CHECKS */;
+/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
+/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
+/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+/*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
+
+-- Dump completed on 2015-09-02 11:22:10
